@@ -1,0 +1,1643 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#d9e5f6">
+<title>REFLECT｜醫生評估介面</title>
+<style>
+:root{--navy:#000068;--ink:#1f1f1f;--blue:#7bbdff;--green:#a2ff66;--scale:1}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden}
+body{font-family:"42dot Sans","Noto Sans TC","Microsoft JhengHei",Arial,sans-serif;color:var(--ink);background:#e5eef4}
+button,input{font:inherit}
+button{cursor:pointer}
+#stage{position:absolute;width:1920px;height:1080px;left:50%;top:50%;transform:translate(-50%,-50%) scale(var(--scale));transform-origin:center;background:#dce8ef url("clinic.png") center/cover no-repeat;overflow:hidden}
+#stage:after{content:"";position:absolute;inset:0;background:rgba(217,217,217,.3);pointer-events:none}
+.panel{position:absolute;z-index:1}
+.management{left:71px;top:98px;width:378px;height:442px}
+.management-bg{position:absolute;left:-5px;top:-5px;width:388px;height:452px;pointer-events:none}
+.panel-content{position:absolute;inset:0}
+.m-title{position:absolute;left:29px;top:25px;color:var(--navy);font-size:40px;font-weight:700;line-height:1.2;white-space:nowrap}
+.m-en{position:absolute;left:32px;top:76px;color:#1f1f1f;font-size:12px;font-weight:800;letter-spacing:.15px}
+.add-btn{position:absolute;left:232px;top:130px;width:113px;height:31px;border:1px solid rgba(255,255,255,.65);border-radius:20px;background:linear-gradient(180deg,rgba(162,255,102,.25),rgba(162,255,102,.55));box-shadow:0 4px 4px rgba(103,234,71,.5);display:flex;align-items:center;justify-content:center;gap:5px;color:#1f1f1f;font-size:14px;font-weight:600;padding:0 5px}
+.add-btn img{width:19px;height:19px}
+.patient-list{position:absolute;left:33px;top:176px;width:312px;height:235px;border:2px solid #fff;border-radius:15px;background:linear-gradient(180deg,rgba(123,189,255,.25),rgba(123,189,255,.5));box-shadow:inset 0 5px 4px #347fea;padding:11px 11px 10px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.patient-row{height:45px;min-height:45px;width:254px;border:2px solid #fff;border-radius:10px;background:linear-gradient(90deg,rgba(255,255,255,.3),rgba(123,189,255,.3));display:flex;align-items:center;gap:12px;padding:0 8px;color:var(--navy);font-size:24px;text-align:left;line-height:1;transition:background .18s,box-shadow .18s}
+.patient-row:hover,.patient-row.selected{background:linear-gradient(90deg,rgba(255,255,255,.55),rgba(123,189,255,.55));box-shadow:0 2px 7px rgba(52,127,234,.26)}
+.patient-row img{width:20px;height:20px}
+.scrollbar{position:absolute;left:320px;top:193px;width:10px;height:201px;pointer-events:none}
+.profile{left:474px;top:98px;width:383px;height:883px;border:2px solid #fff;border-radius:20px;box-shadow:0 5px 5px rgba(52,127,234,.5);overflow:hidden;background:linear-gradient(180deg,rgba(207,227,255,.7) 0%,rgba(255,255,255,.78) 16%,rgba(255,255,255,.76) 95%,rgba(207,227,255,.7) 100%)}
+.profile::before{content:"";position:absolute;left:-10px;bottom:-2px;width:404px;height:276px;background:url("figma-assets/form-decoration.svg") center/100% 100% no-repeat;opacity:.74;pointer-events:none}
+.profile::after{content:"";position:absolute;inset:auto 0 0;height:300px;background:url("figma-assets/form-circles.svg") center/100% 100% no-repeat;opacity:.55;pointer-events:none}
+.profile-title{position:absolute;left:40px;top:28px;z-index:1;color:var(--navy);font-size:40px;font-weight:700;line-height:1.2;white-space:nowrap}
+.profile-en{position:absolute;left:43px;top:76px;z-index:1;color:#1f1f1f;font-size:12px;font-weight:800}
+.green-rule{position:absolute;left:45px;top:113px;width:294px;height:2px;background:#a2ff66}
+.profile-content{position:absolute;inset:0;z-index:1}
+.field-label{position:absolute;left:58px;color:var(--navy);font-size:20px;font-weight:600;line-height:24px}
+.field-label:before{content:"›";position:absolute;left:-13px;font-size:27px;top:-2px}
+.name-label{top:176px}
+.name-field{position:absolute;left:40px;top:200px;width:303px;height:60px;border:2px solid #fff;border-radius:10px;background:rgba(123,189,255,.5);box-shadow:inset 0 5px 4px #7bbdff;padding:0 18px;color:#1f1f1f;font-size:24px}
+.side-label{top:339px}
+.side-options{position:absolute;left:40px;top:363px;width:303px;height:98px;border:2px solid #fff;border-radius:10px;background:rgba(123,189,255,.5);box-shadow:inset 0 5px 4px #7bbdff;padding:11px 16px;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.support-label{top:525px}
+.support-options{position:absolute;left:40px;top:549px;width:303px;height:164px;border:2px solid #fff;border-radius:10px;background:rgba(123,189,255,.5);box-shadow:inset 0 5px 4px #7bbdff;padding:10px 16px;display:flex;flex-direction:column;justify-content:space-around}
+.choice{display:flex;align-items:center;gap:9px;font-size:20px;color:#1f1f1f;line-height:1.15;cursor:pointer}
+.choice input{appearance:none;width:21px;height:21px;margin:0;border-radius:50%;background:#7bbdff;box-shadow:inset 0 2px 4px rgba(0,0,0,.2);position:relative;flex:none}
+.choice input:checked{background:#a2ff66;box-shadow:0 2px 5px rgba(60,160,37,.55)}
+.choice input:checked:after{content:"✓";position:absolute;inset:-2px 0 0;text-align:center;color:#3caf20;font-size:18px;font-weight:900}
+.start-rehab{position:absolute;left:40px;top:770px;width:303px;height:62px;border:2px solid rgba(255,255,255,.6);border-radius:20px;background:linear-gradient(180deg,rgba(162,255,102,.25),rgba(162,255,102,.56));box-shadow:0 5px 4px rgba(103,234,71,.5);color:var(--navy);font-size:32px;font-weight:600}
+.start-rehab:hover,.add-btn:hover{filter:brightness(1.04);transform:translateY(-1px)}
+.status-note{position:absolute;left:40px;top:842px;width:303px;text-align:center;font-size:13px;color:#35547a}
+.hidden{display:none!important}
+#overlay{position:absolute;inset:0;z-index:5;background:rgba(16,30,53,.3);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center}
+.dialog{width:840px;min-height:490px;border:2px solid #fff;border-radius:30px;background:linear-gradient(135deg,rgba(248,252,255,.92),rgba(210,233,250,.82));box-shadow:0 18px 60px rgba(14,41,76,.25);padding:42px 54px;color:var(--navy);position:relative}
+.dialog-close{position:absolute;right:24px;top:18px;border:0;background:transparent;color:var(--navy);font-size:32px}
+.dialog h2{font-size:42px;margin:0 0 8px}
+.dialog .english{font-size:14px;color:#37424e;font-weight:700;letter-spacing:1px}
+.dialog-rule{height:2px;background:var(--green);margin:22px 0 28px}
+.dialog-copy{font-size:23px;line-height:1.8;color:#183064}
+.dialog-copy small{display:block;color:#49627e;font-size:16px;margin-top:10px}
+.dialog-actions{display:flex;justify-content:flex-end;gap:16px;margin-top:35px}
+.glass-btn{min-width:180px;height:58px;padding:0 24px;border:2px solid white;border-radius:18px;background:linear-gradient(#dffff0,#bcefff);box-shadow:0 4px 12px #a4d5fa;color:var(--navy);font-size:22px;font-weight:700}
+.glass-btn.primary{background:linear-gradient(#dcffc5,#94ea6a);box-shadow:0 4px 12px rgba(103,234,71,.4)}
+.camera-placeholder{height:280px;border:2px solid white;border-radius:20px;background:linear-gradient(135deg,rgba(85,142,196,.2),rgba(255,255,255,.72));display:flex;align-items:center;justify-content:center;text-align:center;color:#315078;font-size:22px;padding:30px}
+.camera-box{position:relative;height:280px;margin-top:22px;border:2px solid #fff;border-radius:20px;overflow:hidden;background:#0d1b2e;box-shadow:0 4px 12px rgba(52,127,234,.25)}
+.camera-box video,.camera-box canvas{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.camera-box canvas{pointer-events:none}
+.camera-msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;color:#fff;font-size:20px;line-height:1.5;background:rgba(13,27,46,.82)}
+.camera-msg button{height:44px;padding:0 22px;border:2px solid #fff;border-radius:14px;background:linear-gradient(#dcffc5,#94ea6a);color:var(--navy);font-size:18px;font-weight:700}
+.camera-live{position:absolute;left:14px;top:12px;display:flex;align-items:center;gap:7px;padding:4px 12px;border-radius:14px;background:rgba(0,0,104,.55);color:#fff;font-size:14px;font-weight:700}
+.camera-live:before{content:"";width:9px;height:9px;border-radius:50%;background:#a2ff66}
+#newPatientOverlay{position:absolute;inset:0;z-index:7;background:rgba(16,30,53,.32);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center}
+.new-dialog{width:560px;border:2px solid white;border-radius:25px;background:rgba(244,250,255,.95);padding:36px;box-shadow:0 15px 50px rgba(0,0,0,.2)}
+.new-dialog h2{margin:0 0 24px;color:var(--navy);font-size:32px}
+.new-dialog label{display:block;color:var(--navy);font-size:18px;font-weight:700;margin:14px 0 7px}
+.new-dialog input[type=text]{width:100%;height:52px;border:2px solid #fff;border-radius:12px;background:#c3e0fb;padding:0 14px;font-size:21px}
+.new-dialog .radio-line{display:flex;gap:22px}
+.new-dialog .radio-line .choice{font-size:17px}
+.new-dialog-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:26px}
+#stage:after{z-index:0}
+#pretest{position:absolute;inset:0;z-index:8;overflow:hidden;background:#dce8ef url("clinic.png") center/cover no-repeat;color:#fff}
+#pretest.hidden{display:none}
+#pretest-shade{position:absolute;inset:0;background:rgba(47,47,47,.3);pointer-events:none}
+#pretest[data-state="position-confirmed"] #pretest-shade,#pretest[data-state="game-start"] #pretest-shade{background:rgba(123,189,255,.3)}
+#poseStage{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pretest-title{position:absolute;left:50%;top:78px;transform:translateX(-50%);margin:0;color:#fff;font-size:64px;line-height:1.25;font-weight:700;text-align:center;white-space:nowrap;text-shadow:0 2px 10px rgba(0,0,0,.18)}
+#pretest[data-state="pretest-start"] .pretest-title{top:50%;transform:translate(-50%,-50%)}
+#pretest[data-state="position-instruction"] .pretest-title{top:50%;transform:translate(-50%,-50%);line-height:1.35}
+#pretest[data-state="position-instruction"] .pretest-title span{display:block}
+.position-note{position:absolute;left:50%;bottom:68px;transform:translateX(-50%);font-size:40px;white-space:nowrap;text-shadow:0 2px 8px rgba(0,0,0,.2)}
+#pretest[data-state="position-instruction"] .position-note,#pretest[data-state="pretest-start"] .position-note{display:none}
+.camera-inset{position:absolute;left:24px;top:24px;width:300px;height:169px;overflow:hidden;border:2px solid rgba(255,255,255,.95);border-radius:16px;background:rgba(13,27,46,.72);box-shadow:0 4px 22px rgba(0,30,80,.3)}
+.camera-inset video,.camera-inset canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.camera-inset canvas{pointer-events:none}
+.camera-inset .camera-live{left:8px;top:auto;bottom:8px;font-size:12px;padding:4px 9px}
+.camera-inset .camera-msg{font-size:13px;padding:12px;gap:8px;background:rgba(13,27,46,.88)}
+.camera-inset .camera-msg button{height:34px;font-size:14px}
+.camera-close{position:absolute;left:336px;top:24px;width:34px;height:34px;border:1px solid #fff;border-radius:50%;background:rgba(0,0,104,.55);color:white;font-size:22px;line-height:1}
+.flexion-card{position:absolute;left:404px;top:836px;width:1112px;height:169px;color:#000;display:none}
+#pretest[data-state="flexion-instruction"] .flexion-card,#pretest[data-state="flexion-hold"] .flexion-card{display:block}
+.flexion-panel{position:absolute;inset:0;width:100%;height:100%}
+.flexion-label-art{position:absolute;left:16px;top:0;width:354px;height:126px}
+.flexion-title{position:absolute;left:42px;top:15px;margin:0;color:#000068;font-size:48px;line-height:1.05;font-weight:800}
+.flexion-english{position:absolute;left:45px;top:69px;color:#111;font-size:14px;line-height:1;font-weight:800}
+.flexion-prompt{position:absolute;left:408px;top:34px;width:665px;margin:0;color:#111;font-size:40px;line-height:1.32;font-weight:500}
+.hold-ring{position:absolute;right:91px;top:77px;width:130px;height:130px;border-radius:50%;background:conic-gradient(#347fea var(--hold-progress,0%),rgba(255,255,255,.94) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 12px),#000 calc(100% - 11px));mask:radial-gradient(farthest-side,transparent calc(100% - 12px),#000 calc(100% - 11px));display:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,.2))}
+#pretest[data-state="flexion-hold"] .hold-ring{display:block}
+#pretest[data-state="game-start"] .flexion-card,#pretest[data-state^="position-"] .flexion-card{display:none}
+.pretest-error{position:absolute;left:24px;top:210px;max-width:380px;padding:9px 14px;border-radius:12px;background:rgba(0,0,104,.72);color:white;font-size:15px;display:none}
+.pretest-error.visible{display:block}
+.patient-list{overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(52,127,234,.55) transparent}
+.patient-list::-webkit-scrollbar{width:6px}
+.patient-list::-webkit-scrollbar-thumb{background:rgba(52,127,234,.55);border-radius:3px}
+.patient-name{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.new-dialog{width:440px;padding:26px 30px 24px;border-radius:22px}
+.new-dialog h2{margin:0 0 14px;font-size:28px}
+.new-dialog label{margin:8px 0 6px;font-size:17px}
+.new-dialog input[type=text]{height:48px;font-size:20px}
+.new-dialog-actions{margin-top:20px}
+.new-dialog .glass-btn{min-width:130px;height:48px;font-size:20px}
+.name-field{cursor:default;text-overflow:ellipsis}
+.name-field:focus{outline:none}
+.start-rehab:disabled{opacity:.45;cursor:not-allowed;filter:none;transform:none}
+.patient-row{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:pan-y}
+.patient-row.pressing{background:linear-gradient(90deg,rgba(255,255,255,.7),rgba(123,189,255,.7));box-shadow:0 0 0 3px rgba(52,127,234,.35);transform:scale(.97)}
+#patientMenuOverlay,#renameOverlay{position:absolute;inset:0;z-index:7;background:rgba(16,30,53,.32);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center}
+.menu-dialog{width:340px;padding:24px 26px 22px;border:2px solid #fff;border-radius:22px;background:rgba(244,250,255,.96);box-shadow:0 15px 50px rgba(0,0,0,.2);display:flex;flex-direction:column;gap:10px}
+.menu-dialog h2{margin:0 0 6px;color:var(--navy);font-size:26px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu-item{height:50px;border:2px solid #fff;border-radius:14px;background:linear-gradient(#e9f4ff,#c6e1fa);box-shadow:0 3px 8px rgba(52,127,234,.22);color:var(--navy);font-size:20px;font-weight:700}
+.menu-item:hover{filter:brightness(1.04)}
+.menu-item.danger{background:linear-gradient(#fff0ee,#ffd0cb);color:#b3261e;box-shadow:0 3px 8px rgba(240,58,50,.2)}
+.menu-item.cancel{background:transparent;box-shadow:none;border-color:transparent;color:#4d6788;font-weight:600}
+.clear-records{position:absolute;right:34px;top:42px;z-index:2;height:30px;padding:0 12px;border:1px solid #fff;border-radius:15px;background:rgba(255,255,255,.7);color:#b3261e;font-size:13px;font-weight:700;box-shadow:0 2px 6px rgba(52,127,234,.25)}
+.clear-records:hover{background:#fff}
+.head-actions{display:flex;align-items:center;gap:14px}
+.head-actions .clear-records{position:static;height:34px;font-size:14px;padding:0 16px}
+#appToast{position:absolute;left:50%;bottom:46px;transform:translateX(-50%);z-index:20;padding:12px 26px;border-radius:22px;background:rgba(0,0,104,.82);color:#fff;font-size:20px;opacity:0;pointer-events:none;transition:opacity .25s}
+#appToast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
+</style>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="stage" aria-label="REFLECT 醫生評估介面">
+  <section class="panel management" aria-label="患者管理">
+    <img class="management-bg" src="figma-assets/management-glass.svg" alt="">
+    <div class="panel-content">
+      <div class="m-title">患者管理</div><div class="m-en">PATIENT MANAGEMENT</div>
+      <button class="add-btn" id="addPatient"><img src="figma-assets/plus.svg" alt="">新增患者</button>
+      <div class="patient-list" id="patientList" role="listbox" aria-label="患者名單"></div>
+      <img class="scrollbar" src="figma-assets/scrollbar.svg" alt="">
+    </div>
+  </section>
+
+  <section class="panel profile" aria-label="患者基本資料">
+    <div class="profile-title">患者基本資料</div><div class="profile-en">PATIENT INFORMATION</div><div class="green-rule"></div>
+    <div class="profile-content">
+      <label class="field-label name-label" for="patientName">姓名</label>
+      <input class="name-field" id="patientName" value="王小明" autocomplete="off" readonly tabindex="-1" placeholder="尚無患者，請先新增">
+      <div class="field-label side-label">患側</div>
+      <div class="side-options">
+        <label class="choice"><input type="radio" name="side" value="左側" checked><span>左側</span></label>
+        <label class="choice"><input type="radio" name="side" value="右側"><span>右側</span></label>
+      </div>
+      <div class="field-label support-label">輔助方式</div>
+      <div class="support-options">
+        <label class="choice"><input type="checkbox" name="support" value="健側手輔助"><span>健側手輔助</span></label>
+        <label class="choice"><input type="checkbox" name="support" value="手托"><span>手托</span></label>
+        <label class="choice"><input type="checkbox" name="support" value="桌面滑板"><span>桌面滑板</span></label>
+        <label class="choice"><input type="checkbox" name="support" value="其他"><span>其他</span></label>
+      </div>
+      <button class="start-rehab" id="startRehab">開始復健</button>
+      <div class="status-note">舒適、不疼痛的範圍內進行</div>
+    </div>
+  </section>
+
+  <section id="pretest" class="hidden" data-state="pretest-start" role="dialog" aria-modal="true" aria-label="REFLECT 前測流程">
+    <div id="pretest-shade"></div>
+    <canvas id="poseStage" width="1920" height="1080" aria-hidden="true"></canvas>
+    <h1 class="pretest-title" id="pretestTitle">前測開始</h1>
+    <div class="camera-inset" id="cameraInset">
+      <video id="cameraVideo" autoplay muted playsinline></video>
+      <canvas id="posePreview" aria-hidden="true"></canvas>
+      <div class="camera-live" id="cameraLive">正在啟動鏡頭</div>
+      <div class="camera-msg" id="cameraMessage"><div>正在啟動鏡頭…請在瀏覽器詢問時按「允許」。</div></div>
+    </div>
+    <button class="camera-close" id="closePretest" type="button" aria-label="返回患者資料">×</button>
+    <div class="pretest-error" id="pretestError" role="status"></div>
+    <div class="flexion-card" aria-live="polite">
+      <img class="flexion-panel" src="figma-assets/flexion-instruction-panel.svg" alt="">
+      <img class="flexion-label-art" src="figma-assets/flexion-label.svg" alt="">
+      <h2 class="flexion-title">肩關節前舉</h2>
+      <div class="flexion-english">SHOULDER FORWARD FLEXION</div>
+      <p class="flexion-prompt" id="flexionPrompt">請慢慢向前抬起患側手臂<br>在舒適、不疼痛的範圍內完成即可。</p>
+    </div>
+    <div class="hold-ring" id="holdRing" aria-hidden="true"></div>
+  </section>
+
+  <section id="game-screen" class="hidden" aria-label="復健遊戲示意畫面">
+    <div class="game-demo">
+      <div class="game-demo-top"><span>REFLECT　／　復健遊戲</span><span id="gamePatientName">王小明</span></div>
+      <div class="orchard-scene" aria-hidden="true">
+        <div class="game-sun"></div><div class="orchard-hill hill-back"></div><div class="orchard-hill hill-front"></div>
+        <div class="orchard-tree tree-one"><i>🍎</i><i>🍐</i><i>🍊</i></div>
+        <div class="orchard-tree tree-two"><i>🍐</i><i>🍎</i><i>🍊</i></div>
+        <div class="orchard-basket">🧺</div><div class="game-progress"><span></span></div>
+      </div>
+      <div class="game-demo-copy"><span class="game-kicker">肩部伸展・左右交替</span><h1>果園大豐收</h1><p>抬起手臂，摘下樹上的果實</p><div class="game-tap-hint">點按畫面，查看本次結果　→</div></div>
+      <button id="finishGame" type="button" aria-label="結束遊戲並查看結果">查看本次結果</button>
+    </div>
+  </section>
+
+  <section id="results-screen" class="hidden" aria-label="復健結果">
+    <div class="results-head"><div><span class="result-kicker">SESSION　／　療程紀錄</span><strong id="resultPatientTitle">王小明</strong></div><div class="head-actions"><button class="clear-records" id="clearRecordsResults" type="button">清除這位患者的紀錄</button><button class="result-close" id="closeResults" type="button" aria-label="返回患者資料">×</button></div></div>
+    <main class="results-layout">
+      <aside class="result-summary" id="resultOverview">
+        <button class="result-card" data-detail="angle"><span class="result-eyebrow">01　/　動作角度</span><b>活動角度</b><strong id="angleMetric">124°</strong><span id="angleSummary">肩關節前舉・較上次進步 12°</span><small>點選查看活動角度紀錄　→</small></button>
+        <button class="result-card" data-detail="movement"><span class="result-eyebrow">02　/　動作表現</span><b>有效動作</b><strong>18 / 20</strong><span>有效完成・成功率 90%</span><small>點選查看有效動作　→</small></button>
+        <button class="result-card" data-detail="game"><span class="result-eyebrow">03　/　遊戲紀錄</span><b>遊戲內容與次數</b><strong>20 次</strong><span>果園大豐收・肩部伸展</span><small>已完成・遊戲時間 6 分 24 秒　→</small></button>
+      </aside>
+      <section class="detail-summary hidden" id="detailSummary" aria-live="polite"></section>
+      <section class="annotation-panel" id="annotationPanel" aria-label="醫病互動劃記">
+        <div class="snapshot-strip" id="snapshotStrip" aria-label="AI 問題截圖"></div>
+        <div class="annotation-canvas-area" id="annotationCanvasArea">
+          <div class="snapshot-empty" id="snapshotEmpty"><span>✦</span><b>療程問題截圖會顯示於此</b><small>AI 偵測到角度未達目標或姿勢追蹤異常時，會自動保存畫面</small></div>
+          <img class="snapshot-photo hidden" id="snapshotPhoto" alt="目前選取的問題截圖">
+          <canvas id="annotationCanvas" aria-label="醫病共同劃記畫布"></canvas>
+          <button class="snapshot-nav snapshot-prev" id="previousSnapshot" type="button" aria-label="上一張問題照片">‹</button>
+          <button class="snapshot-nav snapshot-next" id="nextSnapshot" type="button" aria-label="下一張問題照片">›</button>
+          <div class="snapshot-caption hidden" id="snapshotCaption"></div>
+        </div>
+        <div class="annotation-bottom"><div class="annotation-title"><strong>醫病互動劃記</strong><small>SHARED SESSION　／　共同回顧</small></div></div>
+      </section>
+      <div class="brush-toolbar" id="brushToolbar" aria-label="畫筆工具列">
+          <button class="palette-grip" id="paletteGrip" type="button" aria-label="拖曳移動畫筆工具列">⠿</button><span class="tool-label">畫筆顏色</span>
+          <button class="pen-color selected" data-color="#a2ff66" aria-label="綠色畫筆"></button><button class="pen-color" data-color="#347fea" aria-label="藍色畫筆"></button><button class="pen-color dark" data-color="#111111" aria-label="黑色畫筆"></button><button class="pen-color red" data-color="#f03a32" aria-label="紅色畫筆"></button><button class="pen-color rainbow" id="customColorToggle" aria-label="選擇自訂顏色"></button><input class="color-picker-input" type="color" id="customPenColor" value="#9e48ff" aria-label="選擇畫筆顏色">
+          <button class="tool-action" id="strokeSizeToggle" type="button" aria-expanded="false">粗細</button><button class="tool-action" id="eraserButton" type="button">橡皮擦</button><button class="tool-action" id="undoStroke" type="button">復原</button><button class="tool-action" id="clearStrokes" type="button">清除</button>
+          <button class="fullscreen-button" id="fullscreenAnnotation" type="button" aria-label="全螢幕檢視劃記區">⛶</button><span class="palette-resize" id="paletteResize" aria-label="調整工具列大小"></span>
+          <div class="toolbar-popover size-popover hidden" id="strokeSizePanel" aria-label="筆刷粗細設定"><label for="penWidthSlider">畫筆粗細 <span id="penWidthValue">4 px</span></label><input type="range" id="penWidthSlider" min="2" max="18" value="4"><label for="eraserWidthSlider">橡皮擦大小 <span id="eraserWidthValue">18 px</span></label><input type="range" id="eraserWidthSlider" min="8" max="48" value="18"></div>
+      </div>
+      <div class="annotation-toast" id="annotationToast" role="status"></div>
+    </main>
+  </section>
+
+  <div id="appToast" role="status"></div>
+  <div id="patientMenuOverlay" class="hidden" role="dialog" aria-modal="true" aria-labelledby="patientMenuTitle">
+    <div class="menu-dialog">
+      <h2 id="patientMenuTitle"></h2>
+      <button class="menu-item" id="menuRename" type="button">修改姓名</button>
+      <button class="menu-item" id="menuClear" type="button">清除資料</button>
+      <button class="menu-item danger" id="menuDelete" type="button">刪除患者檔案</button>
+      <button class="menu-item cancel" id="menuCancel" type="button">取消</button>
+    </div>
+  </div>
+  <div id="renameOverlay" class="hidden" role="dialog" aria-modal="true" aria-labelledby="renameTitle">
+    <form class="new-dialog" id="renameForm">
+      <h2 id="renameTitle">修改姓名</h2>
+      <label for="renameInput">姓名</label><input id="renameInput" type="text" required placeholder="請輸入患者姓名" autocomplete="off">
+      <div class="new-dialog-actions"><button class="glass-btn" type="button" id="cancelRename">取消</button><button class="glass-btn primary" type="submit">儲存</button></div>
+    </form>
+  </div>
+  <div id="newPatientOverlay" class="hidden" role="dialog" aria-modal="true" aria-labelledby="newTitle">
+    <form class="new-dialog" id="newPatientForm">
+      <h2 id="newTitle">新增患者</h2>
+      <label for="newPatientName">姓名</label><input id="newPatientName" type="text" required placeholder="請輸入患者姓名">
+      <div class="new-dialog-actions"><button class="glass-btn" type="button" id="cancelNew">取消</button><button class="glass-btn primary" type="submit">建立患者</button></div>
+    </form>
+  </div>
+</div>
+<script>
+(() => {
+  const patients = [
+    { label: "患者A", name: "王小明", side: "左側" },
+    { label: "患者B", name: "陳美玲", side: "右側" },
+    { label: "患者C", name: "林志宏", side: "左側" },
+    { label: "患者D", name: "張雅雯", side: "右側" }
+  ];
+  let selected = 0;
+  const CUSTOM_PATIENTS_KEY = "reflect-custom-patients";
+  const DELETED_KEY = "reflect-deleted-patients";      // 被刪除的內建患者編號
+  let deletedLabels = [];
+  try { deletedLabels = JSON.parse(localStorage.getItem(DELETED_KEY) || "[]"); } catch (_) {}
+  if (!Array.isArray(deletedLabels)) deletedLabels = [];
+  for (let i = patients.length - 1; i >= 0; i--) if (deletedLabels.includes(patients[i].label)) patients.splice(i, 1);
+  try {
+    const saved = JSON.parse(localStorage.getItem(CUSTOM_PATIENTS_KEY) || "[]");
+    if (Array.isArray(saved)) saved.forEach(item => {
+      if (item && item.label && item.name && !patients.some(x => x.label === item.label)) patients.push({ label: String(item.label), name: String(item.name), side: item.side === "右側" ? "右側" : "左側", custom: true });
+    });
+  } catch (_) {}
+  if (selected >= patients.length) selected = patients.length - 1;
+  function saveCustomPatients() {
+    try { localStorage.setItem(CUSTOM_PATIENTS_KEY, JSON.stringify(patients.filter(x => x.custom).map(({ label, name, side }) => ({ label, name, side })))); }
+    catch (error) { console.warn("Could not save patient list:", error); }
+  }
+  function nextPatientLabel() {
+    const taken = label => patients.some(x => x.label === label) || deletedLabels.includes(label);
+    for (let i = 0; i < 26; i++) {
+      const label = "患者" + String.fromCharCode(65 + i);
+      if (!taken(label)) return label;
+    }
+    let n = 27;
+    while (taken("患者" + n)) n++;
+    return "患者" + n;
+  }
+  const patientList = document.getElementById("patientList");
+  const nameInput = document.getElementById("patientName");
+
+  const OVERRIDES_KEY = "reflect-patient-overrides";
+  let overrides = {};
+  try { overrides = JSON.parse(localStorage.getItem(OVERRIDES_KEY) || "{}") || {}; } catch (_) {}
+  patients.forEach(patient => {
+    const saved = overrides[patient.label];
+    if (!saved) return;
+    if (saved.name) patient.name = String(saved.name);
+    if (saved.side === "左側" || saved.side === "右側") patient.side = saved.side;
+  });
+  function persistPatient(patient) {
+    overrides[patient.label] = { name: patient.name, side: patient.side };
+    try { localStorage.setItem(OVERRIDES_KEY, JSON.stringify(overrides)); }
+    catch (error) { console.warn("Could not save patient edits:", error); }
+    saveCustomPatients();
+  }
+  function syncProfileForm(patient) {
+    nameInput.value = patient ? patient.name : "";
+    document.querySelector('input[name="side"][value="左側"]').checked = !!patient && patient.side === "左側";
+    document.querySelector('input[name="side"][value="右側"]').checked = !!patient && patient.side === "右側";
+    document.getElementById("startRehab").disabled = !patient;
+  }
+  document.querySelectorAll('input[name="side"]').forEach(radio => radio.addEventListener("change", () => {
+    if (!radio.checked || !patients[selected]) return;
+    patients[selected].side = radio.value;
+    persistPatient(patients[selected]);
+  }));
+
+  const LONG_PRESS_MS = 600;
+  function renderPatients() {
+    patientList.replaceChildren();
+    patients.forEach((patient, index) => {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "patient-row" + (index === selected ? " selected" : "");
+      row.setAttribute("role", "option");
+      row.setAttribute("aria-selected", String(index === selected));
+      const avatar = document.createElement("img");
+      avatar.src = "figma-assets/patient-icon.svg";
+      avatar.alt = "";
+      const label = document.createElement("span");
+      label.textContent = patient.name;
+      label.className = "patient-name";
+      row.title = patient.name;
+      row.append(avatar, label);
+      // 長按（或滑鼠右鍵）開啟患者選單；一般點擊 = 選取患者
+      let pressTimer = 0, longFired = false, startX = 0, startY = 0;
+      const cancelPress = () => { clearTimeout(pressTimer); pressTimer = 0; row.classList.remove("pressing"); };
+      row.addEventListener("pointerdown", event => {
+        if (event.button) return;
+        longFired = false;
+        startX = event.clientX; startY = event.clientY;
+        row.classList.add("pressing");
+        pressTimer = setTimeout(() => { pressTimer = 0; longFired = true; row.classList.remove("pressing"); openPatientMenu(patient); }, LONG_PRESS_MS);
+      });
+      row.addEventListener("pointermove", event => {
+        if (pressTimer && Math.hypot(event.clientX - startX, event.clientY - startY) > 12) cancelPress();
+      });
+      ["pointerup", "pointerleave", "pointercancel"].forEach(type => row.addEventListener(type, cancelPress));
+      row.addEventListener("contextmenu", event => { event.preventDefault(); cancelPress(); longFired = true; openPatientMenu(patient); });
+      row.addEventListener("click", event => {
+        if (longFired) { longFired = false; event.preventDefault(); return; }
+        selected = index;
+        syncProfileForm(patient);
+        renderPatients();
+      });
+      patientList.append(row);
+    });
+    patientList.querySelector(".patient-row.selected")?.scrollIntoView({ block: "nearest" });
+  }
+
+  let cameraStream = null;
+  let cameraToken = 0;
+  let poseLandmarker = null;
+  let poseFrameId = 0;
+  let pretestSession = null;
+  const RESULT_TARGET_ANGLE = 135; // Figma 示意值；正式使用時應改為治療師設定的個案目標。
+  const MAX_ISSUE_CAPTURES = 5;
+  const RESULT_DETAILS = {
+    angle: { kicker: "01　/　MOVEMENT RANGE", title: "活動角度", description: "肩關節前舉的活動角度與療程變化。", metric: "124°", caption: "肩關節前舉", stats: [["上次紀錄", "112°"], ["本次變化", "+12°"], ["復健目標", "135°"]] },
+    movement: { kicker: "02　/　MOVEMENT QUALITY", title: "有效動作", description: "動作完成情形與需要協助的次數。", metric: "18 / 20", caption: "次有效完成・成功率 90%", stats: [["完成次數", "18 次"], ["成功率", "90%"], ["需要協助", "2 次"]] },
+    game: { kicker: "03　/　GAME & REPETITIONS", title: "遊戲內容與次數", description: "本次使用的復健遊戲與練習量。", metric: "20 次", caption: "完成動作・果園大豐收", stats: [["遊戲內容", "果園大豐收"], ["練習難度", "初級"], ["遊戲時間", "6 分 24 秒"]] }
+  };
+  let selectedResultDetail = null;
+  let selectedSnapshotId = "blank";
+  let savedCaptures = [];
+  let annotationStrokes = [];
+  let annotationNotes = "";
+  let activePenColor = "#a2ff66";
+  let eraseMode = false;
+  let drawingAnnotation = false;
+  let annotationStroke = null;
+  let brushScale = 1;
+
+  const POSE_CONNECTIONS = [
+    [0,11],[0,12],[11,12],[11,13],[13,15],[15,17],[15,19],[15,21],[17,19],
+    [12,14],[14,16],[16,18],[16,20],[16,22],[18,20],[11,23],[12,24],[23,24],
+    [23,25],[25,27],[27,29],[29,31],[27,31],[24,26],[26,28],[28,30],[30,32],[28,32]
+  ];
+  const POSE_JOINTS = [0,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32];
+
+  // ───────────── 人形外框設定（可自行調整）─────────────
+  const BODY_OUTLINE = {
+    enabled: true,      // false = 關閉人形外框，只顯示骨架
+    mode: "avatar",     // "avatar" = 人形模型直接綁在骨架上（穩定，只要有骨架就有形體）
+                        // "mask"   = 用 MediaPipe 分割遮罩描真實輪廓（較不穩定，需要好光線）
+    mirror: true,       // true = 鏡像顯示（和左上角鏡頭小視窗一致）
+    gapPx: 8,           // 外框離身體多遠（舞台像素）
+    linePx: 6,          // 外框亮線粗細（舞台像素）
+    glowPx: 18,         // 外層藍光粗細（舞台像素），骨架是 15
+    fillAlpha: 0.22,    // 人形內部淡藍填色，0 = 不填色
+    bottomExtend: 0.5,  // 髖部以下往下延伸多少（相對軀幹長度），之後漸層淡出
+    bodyScale: 1.0,     // 人形整體胖瘦（1 = 標準，1.15 = 稍微壯一點）
+    maskCols: 640       // 僅 mask 模式：輪廓解析度
+  };
+  const outlineLayers = {};
+
+  function outlineCanvas(name, w, h) {
+    let c = outlineLayers[name];
+    if (!c) c = outlineLayers[name] = document.createElement("canvas");
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    return c;
+  }
+
+  // 把「剪影」（有顏色的不透明形狀）轉成發光細框線 + 淡填色，畫到 ctx 上
+  // o = { x, y: 剪影左上角在 ctx 座標的位置, kx, ky: 剪影 1 像素 = ctx 幾像素, fadeStart, cut: 底部淡出的起訖列 }
+  function renderGlowOutline(ctx, silC, o) {
+    const cfg = BODY_OUTLINE;
+    const mw = silC.width, mh = silC.height;
+    const k = o.ky;                                   // 剪影 1 像素 = 幾個舞台像素
+    const lm = cfg.linePx / k, gm = Math.max(cfg.glowPx, cfg.linePx) / k;
+    const rc = cfg.gapPx / k + lm / 2;                // 框線中心離身體的距離
+    const pad = Math.ceil(rc + gm / 2) + 3;
+    const W = mw + pad * 2, H = mh + pad * 2;
+    const base = outlineCanvas("base", W, H), bx = base.getContext("2d");
+    bx.clearRect(0, 0, W, H);
+    if ("filter" in bx) bx.filter = "blur(0.6px)";
+    bx.drawImage(silC, pad, pad);
+    bx.filter = "none";
+    const dilate = (name, r) => {
+      const c = outlineCanvas(name, W, H), x = c.getContext("2d");
+      x.clearRect(0, 0, W, H);
+      x.globalCompositeOperation = "source-over";
+      x.drawImage(base, 0, 0);
+      for (let i = 0; i < 16; i++) {
+        const a = i / 16 * Math.PI * 2;
+        x.drawImage(base, Math.cos(a) * r, Math.sin(a) * r);
+      }
+      return c;
+    };
+    const fade = bx.createLinearGradient(0, pad + o.fadeStart, 0, pad + Math.max(o.cut, o.fadeStart + 1));
+    fade.addColorStop(0, "rgba(0,0,0,1)");
+    fade.addColorStop(1, "rgba(0,0,0,0)");
+    // 以 rc 為中心、厚度 t 的環：外圈膨脹 (rc+t/2) 減掉內圈膨脹 (rc-t/2)
+    const makeRing = (name, t, color) => {
+      const outer = dilate(name, rc + t / 2);
+      const x = outer.getContext("2d");
+      x.globalCompositeOperation = "destination-out";
+      x.drawImage(dilate(name + "In", Math.max(0, rc - t / 2)), 0, 0);
+      x.globalCompositeOperation = "source-in";
+      x.fillStyle = color;
+      x.fillRect(0, 0, W, H);
+      x.globalCompositeOperation = "destination-in";
+      x.fillStyle = fade;
+      x.fillRect(0, 0, W, H);
+      x.globalCompositeOperation = "source-over";
+      return outer;
+    };
+    const glowRing = makeRing("ringGlow", gm, "rgba(27,177,255,.86)");   // 外層藍光（同骨架外層）
+    const coreRing = makeRing("ringCore", lm, "#8cecff");                // 內層亮線（同骨架內層）
+
+    const fillC = outlineCanvas("fill", W, H), fx = fillC.getContext("2d");
+    fx.clearRect(0, 0, W, H);
+    fx.globalCompositeOperation = "source-over";
+    fx.drawImage(base, 0, 0);
+    fx.globalCompositeOperation = "source-in";
+    fx.fillStyle = "rgb(33,202,255)";
+    fx.fillRect(0, 0, W, H);
+    fx.globalCompositeOperation = "destination-in";
+    fx.fillStyle = fade;
+    fx.fillRect(0, 0, W, H);
+    fx.globalCompositeOperation = "source-over";
+
+    const dx = o.x - pad * o.kx, dy = o.y - pad * o.ky, dw = W * o.kx, dh = H * o.ky;
+    const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 450);
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    if (cfg.fillAlpha > 0) {
+      ctx.globalAlpha = cfg.fillAlpha;
+      ctx.drawImage(fillC, dx, dy, dw, dh);
+      ctx.globalAlpha = 1;
+    }
+    ctx.shadowColor = "#21caff";
+    ctx.shadowBlur = 28 + pulse * 10;                 // 外層光暈（跟骨架同款，會呼吸）
+    ctx.drawImage(glowRing, dx, dy, dw, dh);
+    ctx.drawImage(glowRing, dx, dy, dw, dh);          // 疊兩次讓光更明顯
+    ctx.shadowBlur = 13;
+    ctx.drawImage(coreRing, dx, dy, dw, dh);          // 內層亮線
+    ctx.restore();
+  }
+
+  // ① 人形模型綁骨架：用關節位置畫出頭、頸、軀幹、四肢，粗細依肩寬等比例縮放
+  function drawBodyAvatar(ctx, landmarks, pointXY) {
+    const cfg = BODY_OUTLINE;
+    const vis = i => {
+      const p = landmarks[i];
+      return p && (p.visibility ?? p.presence ?? 1) >= 0.3 ? pointXY(p) : null;
+    };
+    const L = vis(11), R = vis(12);
+    if (!L || !R) return;
+    const sw = Math.max(60, Math.hypot(L[0] - R[0], L[1] - R[1])) * cfg.bodyScale;  // 肩寬 = 人形比例基準
+    const M = [(L[0] + R[0]) / 2, (L[1] + R[1]) / 2];
+
+    // 髖部：抓不到就用肩膀往下推算
+    let HL = vis(23), HR = vis(24);
+    if (!HL || !HR) {
+      let dx = -(L[1] - R[1]), dy = L[0] - R[0];
+      if (dy < 0) { dx = -dx; dy = -dy; }
+      const d = Math.hypot(dx, dy) || 1;
+      const down = [dx / d, dy / d];
+      HL = [M[0] + (L[0] - M[0]) * 0.8 + down[0] * sw * 1.5, M[1] + (L[1] - M[1]) * 0.8 + down[1] * sw * 1.5];
+      HR = [M[0] + (R[0] - M[0]) * 0.8 + down[0] * sw * 1.5, M[1] + (R[1] - M[1]) * 0.8 + down[1] * sw * 1.5];
+    }
+    const HM = [(HL[0] + HR[0]) / 2, (HL[1] + HR[1]) / 2];
+    const torsoLen = Math.max(sw, Math.hypot(HM[0] - M[0], HM[1] - M[1]));
+    const stub = cfg.bottomExtend * torsoLen;
+
+    const SW = 960, SH = 540, S = 0.5;                // 剪影用舞台一半解析度，省效能
+    const sc = outlineCanvas("avatarSil", SW, SH), c = sc.getContext("2d");
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.clearRect(0, 0, SW, SH);
+    c.setTransform(S, 0, 0, S, 0, 0);
+    c.fillStyle = c.strokeStyle = "rgb(216,251,255)";
+    c.lineJoin = c.lineCap = "round";
+
+    const disc = (p, r) => { c.beginPath(); c.arc(p[0], p[1], r, 0, Math.PI * 2); c.fill(); };
+    const limb = (a, b, ra, rb) => {                  // 錐形圓角肢段（ra→rb 逐漸變細）
+      if (!a || !b) return;
+      ra *= sw; rb *= sw;
+      disc(a, ra); disc(b, rb);
+      const dx = b[0] - a[0], dy = b[1] - a[1], d = Math.hypot(dx, dy) || 1, nx = -dy / d, ny = dx / d;
+      c.beginPath();
+      c.moveTo(a[0] + nx * ra, a[1] + ny * ra); c.lineTo(b[0] + nx * rb, b[1] + ny * rb);
+      c.lineTo(b[0] - nx * rb, b[1] - ny * rb); c.lineTo(a[0] - nx * ra, a[1] - ny * ra);
+      c.closePath(); c.fill();
+    };
+
+    // 軀幹（肩→髖，外擴成圓潤的身體）
+    c.lineWidth = sw * 0.34;
+    c.beginPath(); c.moveTo(L[0], L[1]); c.lineTo(R[0], R[1]); c.lineTo(HR[0], HR[1]); c.lineTo(HL[0], HL[1]); c.closePath();
+    c.fill(); c.stroke();
+    // 大腿殘段（往下延伸後淡出）
+    for (const [hip, sh] of [[HL, L], [HR, R]]) {
+      const dx = hip[0] - sh[0], dy = hip[1] - sh[1], d = Math.hypot(dx, dy) || 1;
+      limb(hip, [hip[0] + dx / d * stub, hip[1] + dy / d * stub], 0.25, 0.23);
+    }
+    // 手臂：上臂、前臂、手掌
+    for (const [s, e, w, f, tips] of [[L, 13, 15, 0, [17, 19]], [R, 14, 16, 0, [18, 20]]]) {
+      const E = vis(e), Wr = vis(w);
+      limb(s, E, 0.16, 0.125);
+      limb(E, Wr, 0.125, 0.09);
+      const tipPts = tips.map(vis).filter(Boolean);
+      if (Wr && tipPts.length) {
+        const tx = tipPts.reduce((a, p) => a + p[0], 0) / tipPts.length, ty = tipPts.reduce((a, p) => a + p[1], 0) / tipPts.length;
+        limb(Wr, [Wr[0] + (tx - Wr[0]) * 1.3, Wr[1] + (ty - Wr[1]) * 1.3], 0.09, 0.06);
+      }
+    }
+    // 頸與頭
+    const earL = vis(7), earR = vis(8), nose = vis(0);
+    let head = null, ang = 0;
+    if (earL && earR) { head = [(earL[0] + earR[0]) / 2, (earL[1] + earR[1]) / 2 - sw * 0.06]; ang = Math.atan2(earR[1] - earL[1], earR[0] - earL[0]); }
+    else if (nose) head = [nose[0], nose[1] - sw * 0.1];
+    if (head) {
+      limb(M, head, 0.17, 0.15);
+      c.beginPath(); c.ellipse(head[0], head[1], sw * 0.27, sw * 0.37, ang, 0, Math.PI * 2); c.fill();
+    }
+
+    renderGlowOutline(ctx, sc, { x: 0, y: 0, kx: 1 / S, ky: 1 / S, fadeStart: HM[1] * S, cut: (HM[1] + stub) * S });
+  }
+
+  // ② 備用：用 MediaPipe 分割遮罩描真實輪廓（BODY_OUTLINE.mode = "mask"）
+  function drawBodyMask(ctx, mask, g) {
+    const cfg = BODY_OUTLINE;
+    const step = Math.max(1, Math.round(mask.width / cfg.maskCols));
+    const mw = Math.floor(mask.width / step), mh = Math.floor(mask.height / step);
+    if (mw < 8 || mh < 8) return;
+    const rowCut = Math.min(mh, Math.ceil((g.bottom + (g.bottom - g.top) * 0.45) * mh));
+    if (rowCut < 8) return;
+    const data = mask.getAsFloat32Array();
+    const silC = outlineCanvas("sil", mw, mh), silX = silC.getContext("2d");
+    let img = outlineLayers.silImage;
+    if (!img || img.width !== mw || img.height !== mh) img = outlineLayers.silImage = silX.createImageData(mw, mh);
+    const px = img.data;
+    for (let y = 0; y < mh; y++) {
+      const srcRow = y * step * mask.width;
+      for (let x = 0; x < mw; x++) {
+        const o = (y * mw + x) * 4;
+        const inside = y < rowCut && data[srcRow + x * step] > 0.35;
+        px[o] = 216; px[o + 1] = 251; px[o + 2] = 255; px[o + 3] = inside ? 255 : 0;
+      }
+    }
+    silX.putImageData(img, 0, 0);
+    const kx = g.sx * step / mask.width, ky = g.sy * step / mask.height;
+    ctx.save();
+    ctx.translate(g.width / 2, g.height / 2);
+    ctx.scale(g.mir, 1);
+    renderGlowOutline(ctx, silC, {
+      x: -g.centerX * g.sx, y: -g.centerY * g.sy, kx, ky,
+      fadeStart: Math.min(g.bottom * mh, rowCut - (g.bottom - g.top) * mh * 0.15), cut: rowCut
+    });
+    ctx.restore();
+  }
+
+  function stopCamera() {
+    cameraToken++;
+    if (poseFrameId) cancelAnimationFrame(poseFrameId);
+    poseFrameId = 0;
+    if (poseLandmarker) {
+      try { poseLandmarker.close(); } catch (_) {}
+      poseLandmarker = null;
+    }
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      cameraStream = null;
+    }
+    const video = document.getElementById("cameraVideo");
+    if (video) video.srcObject = null;
+  }
+
+  function cameraErrorText(error) {
+    switch (error && error.name) {
+      case "NotAllowedError":
+      case "SecurityError":
+        return "鏡頭權限被擋住了。請點網址列左邊的鎖頭或相機圖示，把相機改成「允許」，再按重新嘗試。";
+      case "NotFoundError":
+      case "DevicesNotFoundError":
+        return "找不到鏡頭，請確認 Webcam 已接上，並在裝置管理員中沒有被停用。";
+      case "NotReadableError":
+      case "TrackStartError":
+        return "鏡頭正被其他程式使用（例如 Zoom、OBS、LINE），請先關閉後再重新嘗試。";
+      case "OverconstrainedError":
+        return "這支鏡頭不支援要求的解析度，請重新嘗試。";
+      default:
+        return "無法啟動鏡頭（" + (error && error.name ? error.name : "未知錯誤") + "）。";
+    }
+  }
+
+  function showCameraMessage(msg, text, buttonText, onRetry) {
+    msg.replaceChildren();
+    const p = document.createElement("div");
+    p.textContent = text;
+    msg.append(p);
+    if (buttonText && onRetry) {
+      const retry = document.createElement("button");
+      retry.type = "button";
+      retry.textContent = buttonText;
+      retry.addEventListener("click", onRetry);
+      msg.append(retry);
+    }
+    msg.classList.remove("hidden");
+  }
+
+  function drawPose(canvas, landmarks) {
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!landmarks) return;
+    const visible = point => point && (point.visibility ?? point.presence ?? 1) >= 0.35;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.save();
+    ctx.shadowColor = "#25c8ff";
+    ctx.shadowBlur = 18;
+    ctx.strokeStyle = "rgba(30, 185, 255, .78)";
+    ctx.lineWidth = Math.max(5, canvas.width * 0.005);
+    for (const [from, to] of POSE_CONNECTIONS) {
+      const a = landmarks[from], b = landmarks[to];
+      if (!visible(a) || !visible(b)) continue;
+      ctx.beginPath();
+      ctx.moveTo(a.x * canvas.width, a.y * canvas.height);
+      ctx.lineTo(b.x * canvas.width, b.y * canvas.height);
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 9;
+    ctx.strokeStyle = "#74eaff";
+    ctx.lineWidth = Math.max(2.5, canvas.width * 0.0022);
+    for (const [from, to] of POSE_CONNECTIONS) {
+      const a = landmarks[from], b = landmarks[to];
+      if (!visible(a) || !visible(b)) continue;
+      ctx.beginPath();
+      ctx.moveTo(a.x * canvas.width, a.y * canvas.height);
+      ctx.lineTo(b.x * canvas.width, b.y * canvas.height);
+      ctx.stroke();
+    }
+    for (const index of POSE_JOINTS) {
+      const point = landmarks[index];
+      if (!visible(point)) continue;
+      const x = point.x * canvas.width, y = point.y * canvas.height;
+      const radius = Math.max(4, canvas.width * 0.004);
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = "#70eaff";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x, y, radius * 0.4, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawStagePose(canvas, landmarks, mask, aspect = 16 / 9) {
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const width = canvas.width, height = canvas.height;
+    ctx.clearRect(0, 0, width, height);
+    if (!landmarks) return;
+    const visible = p => p && (p.visibility ?? p.presence ?? 1) >= 0.35;
+    const upper = [0,11,12,13,14,15,16,23,24].map(i => landmarks[i]).filter(visible);
+    if (upper.length < 5) return;
+    const xs = upper.map(p => p.x), ys = upper.map(p => p.y);
+    const left = Math.min(...xs), right = Math.max(...xs), top = Math.min(...ys), bottom = Math.max(...ys);
+    const bodyHeight = Math.max(0.12, bottom - top);
+    const sy = Math.min(790 / bodyHeight, height * 3.8);   // 每 1 個正規化 y 單位 = 幾個舞台像素
+    const sx = sy * aspect;                                // x 要乘上鏡頭長寬比，人形才不會被壓扁
+    const mir = BODY_OUTLINE.mirror ? -1 : 1;
+    const centerX = (left + right) / 2, centerY = (top + bottom) / 2;
+    const pointXY = p => [width / 2 + mir * (p.x - centerX) * sx, height / 2 + (p.y - centerY) * sy];
+    if (BODY_OUTLINE.enabled) {
+      try {
+        if (BODY_OUTLINE.mode === "mask") {
+          if (mask) drawBodyMask(ctx, mask, { width, height, sx, sy, centerX, centerY, mir, top, bottom });
+        } else drawBodyAvatar(ctx, landmarks, pointXY);
+      } catch (error) { console.warn("Body outline error:", error); }
+    }
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.shadowColor = "#21caff";
+    ctx.shadowBlur = 28;
+    ctx.strokeStyle = "rgba(27,177,255,.86)";
+    ctx.lineWidth = 15;
+    for (const [from,to] of [[0,11],[0,12],[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24]]) {
+      const a=landmarks[from],b=landmarks[to];
+      if (!visible(a)||!visible(b)) continue;
+      const [ax,ay]=pointXY(a),[bx,by]=pointXY(b);
+      ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+    }
+    ctx.shadowBlur = 13;
+    ctx.strokeStyle = "#8cecff";
+    ctx.lineWidth = 5;
+    for (const [from,to] of [[0,11],[0,12],[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24]]) {
+      const a=landmarks[from],b=landmarks[to];
+      if (!visible(a)||!visible(b)) continue;
+      const [ax,ay]=pointXY(a),[bx,by]=pointXY(b);
+      ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+    }
+    for (const index of [0,11,12,13,14,15,16,23,24]) {
+      const p=landmarks[index];if(!visible(p))continue;
+      const [x,y]=pointXY(p);ctx.beginPath();ctx.arc(x,y,11,0,Math.PI*2);ctx.fillStyle="#69e8ff";ctx.fill();
+      ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fillStyle="#fff";ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function setPretestState(state) {
+    if (!pretestSession) return;
+    const titles = {
+      "pretest-start": "前測開始",
+      "position-instruction": "<span>請稍微退後，正面站好</span><span>讓頭部、上半身與患側手腕完整入鏡</span>",
+      "position-detecting": "偵測中...",
+      "position-confirmed": "● 已測得",
+      "flexion-instruction": "請慢慢抬起患側手臂",
+      "flexion-hold": "保持姿勢兩秒",
+      "game-start": "● 開始遊戲"
+    };
+    pretestSession.state = state;
+    pretestSession.stateStartedAt = performance.now();
+    document.getElementById("pretest").dataset.state = state;
+    document.getElementById("pretestTitle").innerHTML = titles[state];
+    const prompt = document.getElementById("flexionPrompt");
+    prompt.innerHTML = state === "flexion-hold"
+      ? "已偵測到抬手，請在舒適的位置停住<br>維持兩秒即可自動記錄。"
+      : "請慢慢向前抬起患側手臂<br>到舒適的最高位置後停住。";
+    if (state === "position-confirmed") {
+      window.setTimeout(() => { if (pretestSession?.state === "position-confirmed") setPretestState("flexion-instruction"); }, 1700);
+    }
+    if (state === "game-start") {
+      document.getElementById("cameraInset").classList.add("hidden");
+      document.getElementById("poseStage").getContext("2d").clearRect(0,0,1920,1080);
+      stopCamera();
+      document.getElementById("gamePatientName").textContent = nameInput.value.trim() || patients[selected].name;
+      document.getElementById("game-screen").classList.remove("hidden");
+    }
+  }
+
+  function isPositionPoseValid(landmarks) {
+    if (!landmarks) return false;
+    return [0,11,12,23,24].every(index => {
+      const p=landmarks[index];
+      return p && (p.visibility ?? p.presence ?? 0) >= 0.45 && p.x > 0.025 && p.x < 0.975 && p.y > 0.025 && p.y < 0.975;
+    });
+  }
+
+  function getArmSignal(landmarks, side, aspect = 16 / 9) {
+    if (!landmarks) return null;
+    const left = side === "左側";
+    const shoulder = landmarks[left ? 11 : 12];
+    const elbow = landmarks[left ? 13 : 14];
+    const wrist = landmarks[left ? 15 : 16];
+    const visible = p => p && (p.visibility ?? p.presence ?? 0) >= 0.45;
+    if (!visible(shoulder) || !visible(elbow) || !visible(wrist)) return null;
+    const armLength = Math.hypot((wrist.x - shoulder.x) * aspect, wrist.y - shoulder.y);
+    if (armLength < 0.035) return null;
+    return { wristY: wrist.y, armLength };
+  }
+
+  function shoulderFlexionEstimate(landmarks, side, neutral, aspect = 16 / 9) {
+    const current = getArmSignal(landmarks, side, aspect);
+    if (!current || !neutral) return null;
+    // 正面鏡頭下用手腕相對肩膀的上升量估算前舉進度；用定位時的自然垂手作個人基準。
+    const rise = (neutral.wristY - current.wristY) / Math.max(neutral.armLength, current.armLength * 0.8);
+    return Math.asin(Math.max(-1, Math.min(1, rise))) * 180 / Math.PI;
+  }
+
+  function issueCaptureKey() {
+    return "reflect-issue-captures-" + (patients[selected]?.label || "patient");
+  }
+
+  function captureIssueScreenshot(reason, angle = null) {
+    const video = document.getElementById("cameraVideo");
+    if (!video || video.readyState < 2 || !video.videoWidth) return null;
+    const imageCanvas = document.createElement("canvas");
+    imageCanvas.width = 640;
+    imageCanvas.height = Math.round(640 * video.videoHeight / video.videoWidth);
+    const context = imageCanvas.getContext("2d");
+    context.save();
+    context.translate(imageCanvas.width, 0);
+    context.scale(-1, 1);
+    context.drawImage(video, 0, 0, imageCanvas.width, imageCanvas.height);
+    context.restore();
+    let stored = [];
+    try { stored = JSON.parse(localStorage.getItem(issueCaptureKey()) || "[]"); } catch (_) {}
+    const capture = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      reason,
+      angle: angle === null ? null : Number(angle.toFixed(1)),
+      createdAt: new Date().toISOString(),
+      image: imageCanvas.toDataURL("image/jpeg", .64)
+    };
+    stored.unshift(capture);
+    stored = stored.slice(0, MAX_ISSUE_CAPTURES);
+    try {
+      localStorage.setItem(issueCaptureKey(), JSON.stringify(stored));
+    } catch (error) {
+      try {
+        stored.pop();
+        localStorage.setItem(issueCaptureKey(), JSON.stringify(stored));
+      } catch (_) {
+        console.warn("Could not save the issue screenshot:", error);
+        return null;
+      }
+    }
+    savedCaptures = stored;
+    if (!document.getElementById("results-screen").classList.contains("hidden")) renderSnapshots();
+    return capture;
+  }
+
+  function saveBaselineAngle(angle) {
+    const side = document.querySelector('input[name="side"]:checked')?.value || patients[selected].side;
+    const patient = patients[selected];
+    const record = {
+      patientLabel: patient.label,
+      patientName: nameInput.value.trim() || patient.name,
+      affectedSide: side,
+      baselineAngle: Number(angle.toFixed(1)),
+      recordedAt: new Date().toISOString()
+    };
+    if (angle < RESULT_TARGET_ANGLE) {
+      captureIssueScreenshot(`活動角度未達目標（${Math.round(angle)}°／目標 ${RESULT_TARGET_ANGLE}°）`, angle);
+    }
+    try {
+      const stored = JSON.parse(localStorage.getItem("reflect-pretest-results") || "[]");
+      const next = stored.filter(item => item.patientLabel !== record.patientLabel || item.affectedSide !== side);
+      next.push(record);
+      localStorage.setItem("reflect-pretest-results", JSON.stringify(next));
+      document.getElementById("cameraLive").textContent = "前測已完成";
+    } catch (error) {
+      console.warn("Could not save the local baseline:", error);
+      document.getElementById("pretestError").textContent = "前測完成，但本機無法保存紀錄。";
+      document.getElementById("pretestError").classList.add("visible");
+    }
+    setPretestState("game-start");
+  }
+
+  function processPretestPose(landmarks, now, aspect) {
+    if (!pretestSession) return;
+    const valid = isPositionPoseValid(landmarks);
+    const live = document.getElementById("cameraLive");
+    const ring = document.getElementById("holdRing");
+    if (pretestSession.state === "position-instruction" || pretestSession.state === "position-detecting") {
+      if (!valid) {
+        pretestSession.poseStableSince = 0;
+        live.textContent = "請讓上半身完整入鏡";
+        return;
+      }
+      if (pretestSession.state === "position-instruction" && now - pretestSession.stateStartedAt > 700) setPretestState("position-detecting");
+      live.textContent = "正在確認定位";
+      if (!pretestSession.poseStableSince) pretestSession.poseStableSince = now;
+      const neutral = getArmSignal(landmarks, document.querySelector('input[name="side"]:checked')?.value || patients[selected].side, aspect);
+      if (neutral) {
+        pretestSession.neutralSamples.push(neutral);
+        if (pretestSession.neutralSamples.length > 24) pretestSession.neutralSamples.shift();
+      }
+      if (pretestSession.state === "position-detecting" && now - pretestSession.poseStableSince >= 1000) {
+        if (pretestSession.neutralSamples.length >= 5) {
+          const ys = pretestSession.neutralSamples.map(sample => sample.wristY).sort((a,b)=>a-b);
+          const lengths = pretestSession.neutralSamples.map(sample => sample.armLength).sort((a,b)=>a-b);
+          pretestSession.neutralArm = { wristY: ys[Math.floor(ys.length/2)], armLength: lengths[Math.floor(lengths.length/2)] };
+          setPretestState("position-confirmed");
+        } else {
+          live.textContent = "請讓患側手臂自然垂下，並露出手腕";
+        }
+      }
+      return;
+    }
+    if (pretestSession.state !== "flexion-instruction" && pretestSession.state !== "flexion-hold") return;
+    if (valid) {
+      pretestSession.poseIssueSince = 0;
+      pretestSession.poseIssueCaptured = false;
+      pretestSession.noPoseSince = 0;
+      pretestSession.noPoseCaptured = false;
+    } else {
+      pretestSession.poseIssueSince ||= now;
+      if (now - pretestSession.poseIssueSince >= 900 && !pretestSession.poseIssueCaptured) {
+        captureIssueScreenshot("姿勢異常：患側手臂或身體離開偵測範圍");
+        pretestSession.poseIssueCaptured = true;
+      }
+    }
+    if (!valid || !pretestSession.neutralArm) {
+      pretestSession.holdSince = 0;
+      ring.style.setProperty("--hold-progress", "0%");
+      if (pretestSession.state === "flexion-hold") setPretestState("flexion-instruction");
+      live.textContent = pretestSession.neutralArm ? "請回到鏡頭範圍" : "定位手臂基準中";
+      return;
+    }
+    const side = document.querySelector('input[name="side"]:checked')?.value || patients[selected].side;
+    const raw = shoulderFlexionEstimate(landmarks, side, pretestSession.neutralArm, aspect);
+    if (raw === null) {
+      live.textContent = "患側手腕未入鏡，請稍微退後";
+      pretestSession.holdSince = 0;
+      ring.style.setProperty("--hold-progress", "0%");
+      pretestSession.armLostSince ||= now;
+      if (now - pretestSession.armLostSince > 500) {
+        pretestSession.motionStarted = false;
+        pretestSession.startCandidateSince = 0;
+        pretestSession.angleHistory.length = 0;
+        pretestSession.peakAngle = 0;
+      }
+      if (pretestSession.state === "flexion-hold") setPretestState("flexion-instruction");
+      document.getElementById("pretestTitle").textContent = "請讓患側手腕入鏡";
+      document.getElementById("flexionPrompt").innerHTML = "請稍微退後或調整鏡頭<br>讓肩膀、手肘與手腕都完整入鏡。";
+      return;
+    }
+    pretestSession.armLostSince = 0;
+    const angle = Math.max(0, raw);
+    const history = pretestSession.angleHistory;
+    history.push({t:now,a:angle});
+    while (history.length && now - history[0].t > 650) history.shift();
+    const slope = history.length > 5
+      ? (history.slice(-3).reduce((sum, item) => sum + item.a, 0) / 3 - history.slice(0, 3).reduce((sum, item) => sum + item.a, 0) / 3) / (history[history.length-1].t - history[0].t) * 1000
+      : 0;
+    const threshold = 4; // 降低起算角度，讓微幅抬手也可開始計時；需維持穩定兩秒才完成。
+    if (!pretestSession.motionStarted && angle >= threshold) {
+      if (!pretestSession.startCandidateSince) pretestSession.startCandidateSince = now;
+      if (now - pretestSession.startCandidateSince >= 250) pretestSession.motionStarted = true;
+    } else if (!pretestSession.motionStarted) {
+      pretestSession.startCandidateSince = 0;
+    }
+    if (pretestSession.state === "flexion-instruction") {
+      const pausing = pretestSession.motionStarted && angle >= threshold && Math.abs(slope) <= 8;
+      document.getElementById("pretestTitle").textContent = !pretestSession.motionStarted
+        ? "請慢慢抬起患側手臂"
+        : pausing ? "到舒適高度後停住" : "繼續慢慢抬高";
+      document.getElementById("flexionPrompt").innerHTML = !pretestSession.motionStarted
+        ? "請慢慢向前抬起患側手臂<br>到舒適的最高位置後停住。"
+        : pausing ? "系統已偵測到抬手<br>停在舒適的位置，保持兩秒。"
+          : "繼續緩慢抬高<br>到舒適的最高位置後停住。";
+    }
+    if (angle > pretestSession.peakAngle) pretestSession.peakAngle = angle;
+    if (pretestSession.motionStarted && angle >= threshold && Math.abs(slope) <= 8 && angle >= pretestSession.peakAngle - 9) {
+      if (!pretestSession.holdSince) pretestSession.holdSince = now;
+      if (pretestSession.state !== "flexion-hold") setPretestState("flexion-hold");
+      const progress = Math.min(100, (now - pretestSession.holdSince) / 2000 * 100);
+      ring.style.setProperty("--hold-progress", progress + "%");
+      live.textContent = "已偵測到抬手，保持姿勢";
+      if (progress >= 100) saveBaselineAngle(pretestSession.peakAngle);
+    } else {
+      if (slope > 4) pretestSession.peakAngle = Math.max(pretestSession.peakAngle, angle);
+      pretestSession.holdSince = 0;
+      ring.style.setProperty("--hold-progress", "0%");
+      if (pretestSession.state === "flexion-hold") setPretestState("flexion-instruction");
+      live.textContent = pretestSession.motionStarted ? "微幅抬手也可以，舒適停住兩秒" : "等待患側手腕微幅上升";
+    }
+  }
+
+  async function initializePoseTracking(token, video, canvas, msg, live, stageCanvas) {
+    showCameraMessage(msg, "正在載入姿勢追蹤模型…", null, null);
+    try {
+      const { FilesetResolver, PoseLandmarker } = await import(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.1.1/vision_bundle.mjs"
+      );
+      const files = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.1.1/wasm"
+      );
+      const options = {
+        baseOptions: {
+          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+          delegate: "GPU"
+        },
+        runningMode: "VIDEO",
+        numPoses: 1,
+        minPoseDetectionConfidence: 0.5,
+        minPosePresenceConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+        outputSegmentationMasks: BODY_OUTLINE.mode === "mask"   // 只有 mask 模式才需要分割遮罩
+      };
+      let task;
+      try {
+        task = await PoseLandmarker.createFromOptions(files, options);
+      } catch (gpuError) {
+        options.baseOptions.delegate = "CPU";
+        task = await PoseLandmarker.createFromOptions(files, options);
+      }
+      if (token !== cameraToken || !video.isConnected) {
+        task.close();
+        return;
+      }
+      poseLandmarker = task;
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
+      stageCanvas.width = 1920;
+      stageCanvas.height = 1080;
+      msg.classList.add("hidden");
+      live.dataset.state = "tracking";
+      live.textContent = "等待入鏡";
+      let lastVideoTime = -1;
+      const render = () => {
+        if (token !== cameraToken || !video.isConnected || !poseLandmarker) return;
+        if (video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+          try {
+            const result = poseLandmarker.detectForVideo(video, performance.now());
+            const pose = result.landmarks && result.landmarks[0];
+            const bodyMask = result.segmentationMasks && result.segmentationMasks[0];
+            drawPose(canvas, pose);
+            drawStagePose(stageCanvas, pose, bodyMask, (video.videoWidth || 1280) / (video.videoHeight || 720));
+            try { result.close(); } catch (_) {}
+            if (pose) processPretestPose(pose, performance.now(), (video.videoWidth || 1280) / (video.videoHeight || 720));
+            else {
+              stageCanvas.getContext("2d").clearRect(0,0,stageCanvas.width,stageCanvas.height);
+              if (pretestSession && !["pretest-start","game-start"].includes(pretestSession.state)) {
+                live.textContent = "請保持正面入鏡";
+                pretestSession.poseStableSince = 0;
+                if (["flexion-instruction","flexion-hold"].includes(pretestSession.state)) {
+                  pretestSession.noPoseSince ||= performance.now();
+                  if (performance.now() - pretestSession.noPoseSince >= 900 && !pretestSession.noPoseCaptured) {
+                    captureIssueScreenshot("姿勢異常：未偵測到患者姿勢");
+                    pretestSession.noPoseCaptured = true;
+                  }
+                }
+                if (pretestSession.state === "flexion-hold") setPretestState("flexion-instruction");
+                if (["flexion-instruction","flexion-hold"].includes(pretestSession.state)) {
+                  document.getElementById("pretestTitle").textContent = "請回到鏡頭範圍";
+                  document.getElementById("flexionPrompt").innerHTML = "請正面站好並稍微退後<br>讓上半身和患側手腕完整入鏡。";
+                }
+              }
+            }
+            lastVideoTime = video.currentTime;
+          } catch (error) {
+            console.error("Pose tracking error:", error);
+            live.textContent = "追蹤暫停";
+          }
+        }
+        poseFrameId = requestAnimationFrame(render);
+      };
+      render();
+    } catch (error) {
+      console.error("Pose model error:", error);
+      if (token === cameraToken) {
+        live.dataset.state = "error";
+        live.textContent = "鏡頭已連線";
+        showCameraMessage(msg, "鏡頭已連線，但姿勢模型未載入。請確認網路正常後重新嘗試。", "重新嘗試", () => startCamera(video, canvas, msg, live, stageCanvas));
+      }
+    }
+  }
+
+  async function startCamera(video, canvas, msg, live, stageCanvas) {
+    const token = ++cameraToken;
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showCameraMessage(msg, "此網址無法使用鏡頭。請用 https:// 或 http://localhost 開啟本頁。", null, null);
+      return;
+    }
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      cameraStream = null;
+    }
+    live.dataset.state = "loading";
+    live.textContent = "正在啟動鏡頭";
+    showCameraMessage(msg, "正在啟動鏡頭…請在瀏覽器詢問時按「允許」。", null, null);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" },
+        audio: false
+      });
+      // 使用者在鏡頭啟動前就離開這一步：直接關掉，避免鏡頭一直亮著
+      if (token !== cameraToken || !video.isConnected) {
+        stream.getTracks().forEach(track => track.stop());
+        return;
+      }
+      cameraStream = stream;
+      video.srcObject = stream;
+      await video.play();
+      live.dataset.state = "loading";
+      live.textContent = "載入姿勢模型";
+      await initializePoseTracking(token, video, canvas, msg, live, stageCanvas);
+    } catch (error) {
+      console.error("Webcam error:", error);
+      if (token === cameraToken) showCameraMessage(msg, cameraErrorText(error), "重新嘗試", () => startCamera(video, canvas, msg, live, stageCanvas));
+    }
+  }
+
+  function startPretest() {
+    stopCamera();
+    document.getElementById("game-screen").classList.add("hidden");
+    document.getElementById("results-screen").classList.add("hidden");
+    document.getElementById("cameraInset").classList.remove("hidden");
+    document.getElementById("pretestError").classList.remove("visible");
+    document.getElementById("pretest").classList.remove("hidden");
+    document.getElementById("cameraLive").textContent = "正在啟動鏡頭";
+    document.getElementById("cameraMessage").classList.remove("hidden");
+    document.getElementById("cameraMessage").replaceChildren(document.createTextNode("正在啟動鏡頭…請在瀏覽器詢問時按「允許」。"));
+    document.getElementById("holdRing").style.setProperty("--hold-progress", "0%");
+    document.getElementById("poseStage").getContext("2d").clearRect(0,0,1920,1080);
+    pretestSession = {
+      state: "pretest-start", stateStartedAt: performance.now(), poseStableSince: 0,
+      neutralSamples: [], neutralArm: null, angleHistory: [], peakAngle: 0, holdSince: 0, motionStarted: false, startCandidateSince: 0
+    };
+    setPretestState("pretest-start");
+    window.setTimeout(() => {
+      if (pretestSession?.state === "pretest-start") setPretestState("position-instruction");
+    }, 1500);
+    const video = document.getElementById("cameraVideo");
+    const canvas = document.getElementById("posePreview");
+    const msg = document.getElementById("cameraMessage");
+    const live = document.getElementById("cameraLive");
+    const stageCanvas = document.getElementById("poseStage");
+    startCamera(video, canvas, msg, live, stageCanvas);
+  }
+
+  function closeFlow() {
+    stopCamera();
+    pretestSession = null;
+    document.getElementById("pretest").classList.add("hidden");
+    document.getElementById("cameraInset").classList.remove("hidden");
+    document.getElementById("game-screen").classList.add("hidden");
+    document.getElementById("results-screen").classList.add("hidden");
+    document.getElementById("annotationPanel").classList.remove("is-fullscreen");
+    selectedResultDetail = null;
+  }
+
+  function showResults() {
+    document.getElementById("game-screen").classList.add("hidden");
+    document.getElementById("pretest").classList.add("hidden");
+    document.getElementById("results-screen").classList.remove("hidden");
+    document.getElementById("resultPatientTitle").textContent = nameInput.value.trim() || patients[selected].name;
+    const saved = JSON.parse(localStorage.getItem("reflect-pretest-results") || "[]");
+    const record = saved.find(item => item.patientLabel === patients[selected]?.label);
+    if (record?.baselineAngle) {
+      document.getElementById("angleMetric").textContent = Math.round(record.baselineAngle) + "°";
+      document.getElementById("angleSummary").textContent = `肩關節前舉・目標 ${RESULT_TARGET_ANGLE}°`;
+    }
+    document.getElementById("resultOverview").classList.remove("hidden");
+    document.getElementById("detailSummary").classList.add("hidden");
+    selectedResultDetail = null;
+    selectedSnapshotId = "blank";
+    renderSnapshots();
+    requestAnimationFrame(resizeAnnotationCanvas);
+  }
+
+  function captureListKey() { return issueCaptureKey(); }
+  function annotationKey() { return "reflect-annotations-" + (patients[selected]?.label || "patient"); }
+
+  function loadAnnotation() {
+    let all = {};
+    try { all = JSON.parse(localStorage.getItem(annotationKey()) || "{}"); } catch (_) {}
+    const current = all[selectedSnapshotId] || { strokes: [], note: "" };
+    annotationStrokes = Array.isArray(current.strokes) ? current.strokes : [];
+    annotationNotes = current.note || "";
+    redrawAnnotation();
+    renderSelectedPhoto();
+  }
+
+  function saveAnnotation() {
+    let all = {};
+    try { all = JSON.parse(localStorage.getItem(annotationKey()) || "{}"); } catch (_) {}
+    all[selectedSnapshotId] = { strokes: annotationStrokes, note: annotationNotes };
+    try { localStorage.setItem(annotationKey(), JSON.stringify(all)); }
+    catch (error) { showAnnotationToast("這張畫面的備註暫時無法儲存"); console.warn("Could not save annotations:", error); }
+  }
+
+  function formatCaptureDate(iso) {
+    const d = new Date(iso);
+    if (!iso || isNaN(d)) return "";
+    const p = n => String(n).padStart(2, "0");
+    return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  function renderSelectedPhoto() {
+    const capture = savedCaptures.find(item => item.id === selectedSnapshotId);
+    const photo = document.getElementById("snapshotPhoto");
+    const empty = document.getElementById("snapshotEmpty");
+    const caption = document.getElementById("snapshotCaption");
+    photo.classList.toggle("hidden", !capture);
+    empty.classList.toggle("hidden", !!capture);
+    caption.classList.toggle("hidden", !capture);
+    if (capture) {
+      photo.src = capture.image;
+      const when = formatCaptureDate(capture.createdAt);
+      caption.textContent = (when ? `截圖時間 ${when}　` : "") + capture.reason + (capture.angle === null ? "" : `・${capture.angle}°`);
+    } else {
+      photo.removeAttribute("src");
+      caption.textContent = "";
+    }
+    const captureIndex = savedCaptures.findIndex(item => item.id === selectedSnapshotId);
+    document.getElementById("previousSnapshot").disabled = captureIndex < 0 || captureIndex >= savedCaptures.length - 1;
+    document.getElementById("nextSnapshot").disabled = captureIndex <= 0;
+  }
+
+  function renderSnapshots() {
+    try { savedCaptures = JSON.parse(localStorage.getItem(captureListKey()) || "[]"); }
+    catch (_) { savedCaptures = []; }
+    if (!Array.isArray(savedCaptures)) savedCaptures = [];
+    savedCaptures = savedCaptures.slice(0, MAX_ISSUE_CAPTURES);
+    if (!savedCaptures.some(item => item.id === selectedSnapshotId)) selectedSnapshotId = savedCaptures[0]?.id || "blank";
+    const strip = document.getElementById("snapshotStrip");
+    strip.replaceChildren();
+    for (let i = 0; i < MAX_ISSUE_CAPTURES; i++) {
+      const capture = savedCaptures[i];
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "snapshot-slot" + (capture?.id === selectedSnapshotId ? " selected" : "");
+      button.disabled = !capture;
+      button.setAttribute("aria-label", capture ? `問題截圖 ${i + 1}：${formatCaptureDate(capture.createdAt)} ${capture.reason}，點選在劃記區檢視` : `問題截圖位置 ${i + 1}，尚無截圖`);
+      if (capture) {
+        const image = document.createElement("img");
+        image.src = capture.image;
+        image.alt = "";
+        button.append(image);
+        const index = document.createElement("span");
+        index.className = "snapshot-index";
+        index.textContent = String(i + 1).padStart(2, "0");
+        button.append(index);
+        button.title = (formatCaptureDate(capture.createdAt) ? formatCaptureDate(capture.createdAt) + "　" : "") + capture.reason;
+        button.addEventListener("click", () => {
+          saveAnnotation();
+          selectedSnapshotId = capture.id;
+          renderSnapshots();
+          loadAnnotation();
+        });
+      } else {
+        const placeholder = document.createElement("span");
+        placeholder.className = "snapshot-placeholder";
+        placeholder.textContent = "—";
+        button.append(placeholder);
+      }
+      strip.append(button);
+    }
+    renderSelectedPhoto();
+    loadAnnotation();
+  }
+
+  function setResultDetail(key) {
+    const detail = RESULT_DETAILS[key];
+    if (!detail) return;
+    saveAnnotation();
+    selectedResultDetail = key;
+    document.getElementById("resultOverview").classList.add("hidden");
+    const panel = document.getElementById("detailSummary");
+    panel.classList.remove("hidden");
+    const stats = detail.stats.map(([label, value]) => `<div class="detail-stat"><small>${label}</small><b>${value}</b></div>`).join("");
+    const x = [0, 17, 31, 48, 65, 80, 96], y = [74, 59, 66, 46, 36, 49, 20];
+    const points = x.map((v, i) => `${v * 7.1},${y[i] * 2.5}`).join(" ");
+    const dots = x.map((v, i) => `<circle cx="${v * 7.1}" cy="${y[i] * 2.5}" r="7"></circle>`).join("");
+    panel.innerHTML = `<button class="detail-back" type="button" aria-label="回到療程總覽">←　療程總覽</button><div class="detail-kicker">${detail.kicker}</div><h2>${detail.title}</h2><p class="detail-description">${detail.description}</p><div class="detail-metric"><strong>${detail.metric}</strong><span>${detail.caption}</span></div><div class="detail-chart"><svg viewBox="0 0 710 210" preserveAspectRatio="none" aria-label="療程變化示意圖"><polyline points="${points}"></polyline>${dots}</svg></div><div class="detail-stat-row">${stats}</div>`;
+    panel.querySelector(".detail-back").addEventListener("click", showResultOverview);
+  }
+
+  function showResultOverview() {
+    saveAnnotation();
+    selectedResultDetail = null;
+    document.getElementById("detailSummary").classList.add("hidden");
+    document.getElementById("resultOverview").classList.remove("hidden");
+  }
+
+  function showAnnotationToast(message) {
+    const toast = document.getElementById("annotationToast");
+    toast.textContent = message;
+    toast.classList.add("show");
+    clearTimeout(window.reflectToastTimer);
+    window.reflectToastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
+  }
+
+  const annotationCanvas = document.getElementById("annotationCanvas");
+  const annotationContext = annotationCanvas.getContext("2d");
+  function paintAnnotationStroke(stroke) {
+    if (!stroke.points.length) return;
+    const rect = annotationCanvas.getBoundingClientRect();
+    annotationContext.save();
+    annotationContext.globalCompositeOperation = stroke.erase ? "destination-out" : "source-over";
+    annotationContext.strokeStyle = stroke.color;
+    annotationContext.lineWidth = stroke.width || (stroke.erase ? eraserWidth : penWidth);
+    annotationContext.lineCap = "round";
+    annotationContext.lineJoin = "round";
+    annotationContext.beginPath();
+    annotationContext.moveTo(stroke.points[0].x * rect.width, stroke.points[0].y * rect.height);
+    for (const point of stroke.points.slice(1)) annotationContext.lineTo(point.x * rect.width, point.y * rect.height);
+    if (stroke.points.length === 1) annotationContext.lineTo(stroke.points[0].x * rect.width + .1, stroke.points[0].y * rect.height + .1);
+    annotationContext.stroke();
+    annotationContext.restore();
+  }
+
+  function redrawAnnotation() {
+    if (!annotationCanvas || !annotationContext) return;
+    const rect = annotationCanvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    annotationContext.setTransform(dpr, 0, 0, dpr, 0, 0);
+    annotationContext.clearRect(0, 0, rect.width, rect.height);
+    annotationStrokes.forEach(paintAnnotationStroke);
+  }
+
+  function resizeAnnotationCanvas() {
+    if (!annotationCanvas) return;
+    const rect = annotationCanvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const dpr = window.devicePixelRatio || 1;
+    annotationCanvas.width = Math.round(rect.width * dpr);
+    annotationCanvas.height = Math.round(rect.height * dpr);
+    redrawAnnotation();
+  }
+
+  function annotationPoint(event) {
+    const rect = annotationCanvas.getBoundingClientRect();
+    return { x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)), y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)) };
+  }
+
+  function changeSelectedSnapshot(direction) {
+    if (savedCaptures.length < 2) return;
+    saveAnnotation();
+    const current = savedCaptures.findIndex(item => item.id === selectedSnapshotId);
+    const index = current + direction;
+    if (current < 0 || index < 0 || index >= savedCaptures.length) return;
+    selectedSnapshotId = savedCaptures[index].id;
+    renderSnapshots();
+    loadAnnotation();
+  }
+
+  annotationCanvas.addEventListener("pointerdown", event => {
+    if (event.button !== 0) return;
+    drawingAnnotation = true;
+    annotationCanvas.setPointerCapture(event.pointerId);
+    annotationStroke = { color: activePenColor, erase: eraseMode, width: eraseMode ? eraserWidth : penWidth, points: [annotationPoint(event)] };
+    annotationStrokes.push(annotationStroke);
+    redrawAnnotation();
+    event.preventDefault();
+  });
+  annotationCanvas.addEventListener("pointermove", event => {
+    if (!drawingAnnotation || !annotationStroke) return;
+    annotationStroke.points.push(annotationPoint(event));
+    redrawAnnotation();
+  });
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach(type => annotationCanvas.addEventListener(type, event => {
+    if (!drawingAnnotation) return;
+    drawingAnnotation = false;
+    annotationStroke = null;
+    saveAnnotation();
+  }));
+
+  document.getElementById("previousSnapshot").addEventListener("click", () => changeSelectedSnapshot(1));
+  document.getElementById("nextSnapshot").addEventListener("click", () => changeSelectedSnapshot(-1));
+
+  document.querySelectorAll(".pen-color:not(#customColorToggle)").forEach(button => button.addEventListener("click", () => {
+    document.querySelector(".pen-color.selected")?.classList.remove("selected");
+    button.classList.add("selected");
+    activePenColor = button.dataset.color;
+    eraseMode = false;
+    document.getElementById("eraserButton").classList.remove("active");
+  }));
+  document.getElementById("customColorToggle").addEventListener("click", () => {
+    document.getElementById("strokeSizePanel").classList.add("hidden");
+    const picker = document.getElementById("customPenColor");
+    if (typeof picker.showPicker === "function") picker.showPicker();
+    else picker.click();
+  });
+  document.getElementById("customPenColor").addEventListener("input", event => {
+    activePenColor = event.currentTarget.value;
+    document.querySelector(".pen-color.selected")?.classList.remove("selected");
+    document.getElementById("customColorToggle").classList.add("selected");
+    eraseMode = false;
+    document.getElementById("eraserButton").classList.remove("active");
+  });
+  let penWidth = 4, eraserWidth = 18;
+  const sizePanel = document.getElementById("strokeSizePanel");
+  document.getElementById("strokeSizeToggle").addEventListener("click", event => {
+    const open = sizePanel.classList.toggle("hidden");
+    event.currentTarget.setAttribute("aria-expanded", String(!open));
+  });
+  document.getElementById("penWidthSlider").addEventListener("input", event => {
+    penWidth = Number(event.currentTarget.value);
+    document.getElementById("penWidthValue").textContent = `${penWidth} px`;
+  });
+  document.getElementById("eraserWidthSlider").addEventListener("input", event => {
+    eraserWidth = Number(event.currentTarget.value);
+    document.getElementById("eraserWidthValue").textContent = `${eraserWidth} px`;
+  });
+  document.getElementById("eraserButton").addEventListener("click", event => {
+    eraseMode = !eraseMode;
+    event.currentTarget.classList.toggle("active", eraseMode);
+  });
+  document.getElementById("undoStroke").addEventListener("click", () => { annotationStrokes.pop(); redrawAnnotation(); saveAnnotation(); });
+  document.getElementById("clearStrokes").addEventListener("click", () => { annotationStrokes = []; redrawAnnotation(); saveAnnotation(); });
+
+  document.getElementById("fullscreenAnnotation").addEventListener("click", event => {
+    const panel = document.getElementById("annotationPanel");
+    const isFull = panel.classList.toggle("is-fullscreen");
+    event.currentTarget.textContent = isFull ? "↙" : "⛶";
+    event.currentTarget.setAttribute("aria-label", isFull ? "退出全螢幕檢視" : "全螢幕檢視劃記區");
+    requestAnimationFrame(resizeAnnotationCanvas);
+  });
+
+  const brushToolbar = document.getElementById("brushToolbar");
+  const stageScale = () => {
+    const rect = document.getElementById("stage").getBoundingClientRect();
+    return rect.width / 1920 || 1;
+  };
+  document.getElementById("paletteGrip").addEventListener("pointerdown", event => {
+    event.preventDefault();
+    const grip = event.currentTarget;
+    const scale = stageScale(), startX = event.clientX, startY = event.clientY;
+    const startLeft = parseFloat(brushToolbar.style.left || getComputedStyle(brushToolbar).left) || 1360;
+    const startTop = parseFloat(brushToolbar.style.top || getComputedStyle(brushToolbar).top) || 878;
+    grip.setPointerCapture(event.pointerId);
+    const move = e => {
+      const maxLeft = 1920 - brushToolbar.offsetWidth * brushScale;
+      const maxTop = 1080 - brushToolbar.offsetHeight * brushScale;
+      brushToolbar.style.left = Math.max(0, Math.min(maxLeft, startLeft + (e.clientX - startX) / scale)) + "px";
+      brushToolbar.style.top = Math.max(0, Math.min(maxTop, startTop + (e.clientY - startY) / scale)) + "px";
+    };
+    const done = () => { grip.removeEventListener("pointermove", move); grip.removeEventListener("pointerup", done); grip.removeEventListener("pointercancel", done); };
+    grip.addEventListener("pointermove", move);
+    grip.addEventListener("pointerup", done);
+    grip.addEventListener("pointercancel", done);
+  });
+  document.getElementById("paletteResize").addEventListener("pointerdown", event => {
+    event.preventDefault();
+    const handle = event.currentTarget;
+    const scale = stageScale(), startX = event.clientX, startScale = brushScale;
+    handle.setPointerCapture(event.pointerId);
+    const move = e => {
+      brushScale = Math.max(.68, Math.min(1.35, startScale + (e.clientX - startX) / scale / 500));
+      brushToolbar.style.setProperty("--brush-scale", brushScale);
+    };
+    const done = () => { handle.removeEventListener("pointermove", move); handle.removeEventListener("pointerup", done); handle.removeEventListener("pointercancel", done); };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", done);
+    handle.addEventListener("pointercancel", done);
+  });
+
+  document.querySelectorAll(".result-card").forEach(button => button.addEventListener("click", () => setResultDetail(button.dataset.detail)));
+  document.getElementById("finishGame").addEventListener("click", showResults);
+  document.getElementById("closeResults").addEventListener("click", closeFlow);
+
+  document.getElementById("addPatient").addEventListener("click", () => {
+    document.getElementById("newPatientOverlay").classList.remove("hidden");
+    document.getElementById("newPatientName").focus();
+  });
+  document.getElementById("cancelNew").addEventListener("click", () => document.getElementById("newPatientOverlay").classList.add("hidden"));
+  document.getElementById("newPatientForm").addEventListener("submit", event => {
+    event.preventDefault();
+    const name = document.getElementById("newPatientName").value.trim();
+    if (!name) return;
+    const side = "左側";   // 預設左側，之後在「患者基本資料」登記患側
+    patients.push({ label: nextPatientLabel(), name, side, custom: true });
+    saveCustomPatients();
+    selected = patients.length - 1;
+    syncProfileForm(patients[selected]);
+    document.getElementById("newPatientOverlay").classList.add("hidden");
+    event.target.reset();
+    renderPatients();
+  });
+  function showAppToast(message) {
+    const toast = document.getElementById("appToast");
+    toast.textContent = message;
+    toast.classList.add("show");
+    clearTimeout(window.reflectAppToastTimer);
+    window.reflectAppToastTimer = setTimeout(() => toast.classList.remove("show"), 2200);
+  }
+
+  function removeRecordsFor(label) {
+    try {
+      localStorage.removeItem("reflect-issue-captures-" + label);
+      localStorage.removeItem("reflect-annotations-" + label);
+      const stored = JSON.parse(localStorage.getItem("reflect-pretest-results") || "[]");
+      localStorage.setItem("reflect-pretest-results", JSON.stringify(stored.filter(item => item.patientLabel !== label)));
+    } catch (error) { console.warn("Could not clear records:", error); }
+  }
+
+  function clearRecordsFor(patient) {
+    if (!patient) return;
+    if (!window.confirm(`確定要清除「${patient.name}」的所有紀錄嗎？\n\n包含問題截圖、醫病劃記與前測角度，清除後無法復原。`)) return;
+    removeRecordsFor(patient.label);
+    if (patients[selected] === patient) {
+      savedCaptures = [];
+      annotationStrokes = [];
+      annotationNotes = "";
+      selectedSnapshotId = "blank";
+      if (!document.getElementById("results-screen").classList.contains("hidden")) {
+        document.getElementById("angleMetric").textContent = "124°";
+        document.getElementById("angleSummary").textContent = "肩關節前舉・較上次進步 12°";
+        renderSnapshots();
+      }
+    }
+    showAppToast(`已清除 ${patient.name} 的紀錄`);
+  }
+  function clearPatientRecords() { clearRecordsFor(patients[selected]); }   // 結果頁右上角的按鈕
+
+  function deletePatient(patient) {
+    const index = patients.indexOf(patient);
+    if (index < 0) return;
+    if (!window.confirm(`確定要刪除「${patient.name}」的患者檔案嗎？\n\n包含該患者的所有紀錄，刪除後無法復原。`)) return;
+    removeRecordsFor(patient.label);
+    patients.splice(index, 1);
+    if (!patient.custom && !deletedLabels.includes(patient.label)) {
+      deletedLabels.push(patient.label);
+      try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedLabels)); } catch (_) {}
+    }
+    delete overrides[patient.label];
+    try { localStorage.setItem(OVERRIDES_KEY, JSON.stringify(overrides)); } catch (_) {}
+    saveCustomPatients();
+    if (index < selected) selected--;
+    else if (index === selected) selected = Math.min(selected, patients.length - 1);
+    syncProfileForm(patients[selected]);
+    renderPatients();
+    showAppToast(`已刪除 ${patient.name}`);
+  }
+
+  let menuPatient = null;
+  const menuOverlay = document.getElementById("patientMenuOverlay");
+  const renameOverlay = document.getElementById("renameOverlay");
+  function openPatientMenu(patient) {
+    menuPatient = patient;
+    document.getElementById("patientMenuTitle").textContent = patient.name;
+    menuOverlay.classList.remove("hidden");
+  }
+  function closePatientMenus() {
+    menuOverlay.classList.add("hidden");
+    renameOverlay.classList.add("hidden");
+  }
+  document.getElementById("menuCancel").addEventListener("click", closePatientMenus);
+  menuOverlay.addEventListener("click", event => { if (event.target === menuOverlay) closePatientMenus(); });
+  renameOverlay.addEventListener("click", event => { if (event.target === renameOverlay) closePatientMenus(); });
+  document.getElementById("cancelRename").addEventListener("click", closePatientMenus);
+  document.getElementById("menuRename").addEventListener("click", () => {
+    if (!menuPatient) return;
+    menuOverlay.classList.add("hidden");
+    const input = document.getElementById("renameInput");
+    input.value = menuPatient.name;
+    renameOverlay.classList.remove("hidden");
+    input.focus();
+    input.select();
+  });
+  document.getElementById("renameForm").addEventListener("submit", event => {
+    event.preventDefault();
+    const name = document.getElementById("renameInput").value.trim();
+    if (!name || !menuPatient) return;
+    menuPatient.name = name;
+    persistPatient(menuPatient);
+    if (patients[selected] === menuPatient) nameInput.value = name;
+    renameOverlay.classList.add("hidden");
+    renderPatients();
+    showAppToast("已修改姓名");
+  });
+  document.getElementById("menuClear").addEventListener("click", () => { const target = menuPatient; closePatientMenus(); clearRecordsFor(target); });
+  document.getElementById("menuDelete").addEventListener("click", () => { const target = menuPatient; closePatientMenus(); deletePatient(target); });
+  document.getElementById("clearRecordsResults").addEventListener("click", clearPatientRecords);
+
+  document.getElementById("startRehab").addEventListener("click", () => {
+    if (!patients[selected]) return;
+    startPretest();
+  });
+  document.getElementById("closePretest").addEventListener("click", closeFlow);
+  window.addEventListener("keydown", event => { if (event.key === "Escape" && !document.getElementById("pretest").classList.contains("hidden")) closeFlow(); });
+  document.getElementById("newPatientOverlay").addEventListener("click", event => {
+    if (event.target.id === "newPatientOverlay") event.currentTarget.classList.add("hidden");
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+      const annotationPanel = document.getElementById("annotationPanel");
+      if (annotationPanel.classList.contains("is-fullscreen")) {
+        annotationPanel.classList.remove("is-fullscreen");
+        document.getElementById("fullscreenAnnotation").textContent = "⛶";
+        document.getElementById("fullscreenAnnotation").setAttribute("aria-label", "全螢幕檢視劃記區");
+        requestAnimationFrame(resizeAnnotationCanvas);
+        return;
+      }
+      document.getElementById("newPatientOverlay").classList.add("hidden");
+      closePatientMenus();
+      closeFlow();
+    }
+  });
+  function scaleStage() {
+    const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    document.documentElement.style.setProperty("--scale", String(scale));
+  }
+  window.addEventListener("pagehide", stopCamera);
+  window.addEventListener("resize", scaleStage);
+  window.addEventListener("resize", resizeAnnotationCanvas);
+  scaleStage();
+  syncProfileForm(patients[selected]);
+  renderPatients();
+})();
+</script>
+</body>
+</html>
