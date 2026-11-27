@@ -551,9 +551,12 @@ button{cursor:pointer}
 </style>
 <style id="link-cross-device">
 /* 兩台電腦連線（房間代碼）— 只新增介面，不改動 Figma 對應的選擇卡片 */
-#linkMode{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);display:flex;gap:6px;padding:6px;border:1px solid #fff;border-radius:999px;background:#ffffffd9;box-shadow:0 4px 16px #23446624;font-family:"42dot Sans","Noto Sans TC","Microsoft JhengHei",Arial,sans-serif}
-#linkMode button{height:42px;padding:0 24px;border:0;border-radius:999px;background:transparent;color:#4f6178;font:700 19px/1 "42dot Sans","Noto Sans TC","Microsoft JhengHei",Arial,sans-serif;cursor:pointer}
-#linkMode button.on{background:linear-gradient(to bottom,rgba(123,189,255,.3),rgba(51,128,235,.45));color:#000068;box-shadow:inset 0 0 0 2px rgb(51,128,235)}
+#linkMode{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px;border:1px solid #fff;border-radius:999px;background:#ffffffd9;box-shadow:0 4px 16px #23446624;font-family:"42dot Sans","Noto Sans TC","Microsoft JhengHei",Arial,sans-serif}
+#linkMode button{position:relative;z-index:1;height:42px;padding:0 24px;border:0;border-radius:999px;background:transparent;color:#4f6178;transition:color .25s ease;font:700 19px/1 "42dot Sans","Noto Sans TC","Microsoft JhengHei",Arial,sans-serif;cursor:pointer}
+#linkMode button.on{color:#000068}
+#linkMode .link-thumb{position:absolute;z-index:0;left:6px;top:6px;bottom:6px;width:calc((100% - 18px) / 2);border-radius:999px;background:linear-gradient(to bottom,rgba(123,189,255,.3),rgba(51,128,235,.45));box-shadow:inset 0 0 0 2px rgb(51,128,235);transition:transform .32s cubic-bezier(.45,.05,.25,1);pointer-events:none}
+#linkMode[data-active="remote"] .link-thumb{transform:translateX(calc(100% + 6px))}
+@media (prefers-reduced-motion:reduce){#linkMode .link-thumb,#linkMode button{transition:none}}
 #linkMode button:focus-visible{outline:3px solid #081459;outline-offset:2px}
 #dualLink{position:absolute;inset:0;z-index:125;display:grid;place-items:center;padding:36px;background:rgba(224,237,248,.86);backdrop-filter:blur(7px);font-family:"42dot Sans","Noto Sans TC","Microsoft JhengHei",Arial,sans-serif}
 #dualLink.hidden{display:none!important}
@@ -574,7 +577,7 @@ button{cursor:pointer}
 </head>
 <body>
 <div id="stage" aria-label="REFLECT 醫生評估介面">
-  <div id="dualRoleGate" role="dialog" aria-modal="true" aria-label="選擇模擬端別"><div class="role-card"><h1 class="role-title">REFLECT 醫病雙視窗模擬</h1><i class="role-rule"></i><svg class="role-chevron" style="left:105px;top:65px" width="13" height="23" viewBox="0 0 13 23" aria-hidden="true"><path d="M0 0 L13 11.5 L0 23"/></svg><svg class="role-chevron" style="left:609px;top:65px" width="13" height="23" viewBox="0 0 13 23" aria-hidden="true"><path d="M13 0 L0 11.5 L13 23"/></svg><p class="role-note">請在第一個視窗選醫生端，第二個是視窗選患者端。兩個視窗須在同一台電腦、同一瀏覽器開啟這個檔案。</p><button id="chooseDoctor" class="role-btn doctor" type="button" style="left:118px"><i class="base"></i><i class="face"></i><span>開啟醫師端</span></button><button id="choosePatient" class="role-btn patient" type="button" style="left:381px"><i class="base"></i><i class="face"></i><span>開啟患者端</span></button></div><div id="linkMode" role="radiogroup" aria-label="連線方式"><button type="button" role="radio" aria-checked="true" data-link-mode="local" class="on">同一台電腦</button><button type="button" role="radio" aria-checked="false" data-link-mode="remote">兩台電腦（房間代碼）</button></div></div>
+  <div id="dualRoleGate" role="dialog" aria-modal="true" aria-label="選擇模擬端別"><div class="role-card"><h1 class="role-title">REFLECT 醫病雙視窗模擬</h1><i class="role-rule"></i><svg class="role-chevron" style="left:105px;top:65px" width="13" height="23" viewBox="0 0 13 23" aria-hidden="true"><path d="M0 0 L13 11.5 L0 23"/></svg><svg class="role-chevron" style="left:609px;top:65px" width="13" height="23" viewBox="0 0 13 23" aria-hidden="true"><path d="M13 0 L0 11.5 L13 23"/></svg><p class="role-note">請在第一個視窗選醫生端，第二個是視窗選患者端。兩個視窗須在同一台電腦、同一瀏覽器開啟這個檔案。</p><button id="chooseDoctor" class="role-btn doctor" type="button" style="left:118px"><i class="base"></i><i class="face"></i><span>開啟醫師端</span></button><button id="choosePatient" class="role-btn patient" type="button" style="left:381px"><i class="base"></i><i class="face"></i><span>開啟患者端</span></button></div><div id="linkMode" data-active="local" role="radiogroup" aria-label="連線方式"><i class="link-thumb" aria-hidden="true"></i><button type="button" role="radio" aria-checked="true" data-link-mode="local" class="on">同一台電腦</button><button type="button" role="radio" aria-checked="false" data-link-mode="remote">兩台電腦（房間代碼）</button></div></div>
   <div id="dualStatus" aria-live="polite">尚未連線</div>
   <div id="dualWait" class="hidden" role="status"><div class="dual-wait-card"><h2 id="dualWaitTitle">等待另一端連線</h2><p id="dualWaitText">請確認另一個視窗已選擇相對應的角色。</p></div></div>
   <div id="dualLink" class="hidden" role="dialog" aria-modal="true" aria-labelledby="linkTitle"><div class="dual-wait-card"><h2 id="linkTitle">房間代碼</h2><p id="linkText"></p><div id="linkCode" class="link-code hidden" aria-live="polite"></div><form id="linkJoin" class="link-join hidden" autocomplete="off"><input id="linkInput" maxlength="5" inputmode="latin" autocapitalize="characters" spellcheck="false" placeholder="輸入房間代碼" aria-label="房間代碼"><button id="linkGo" class="link-btn" type="submit">連線</button></form><p id="linkNote" role="status"></p><div class="link-actions"><button id="linkRetry" class="link-btn ghost hidden" type="button">重試</button><button id="linkBack" class="link-btn ghost" type="button">返回</button></div></div></div>
@@ -4322,6 +4325,7 @@ button{cursor:pointer}
   }
   document.querySelectorAll("#linkMode button").forEach(button => button.addEventListener("click", () => {
     LINK.wantRemote = button.dataset.linkMode === "remote";
+    linkEl("linkMode").dataset.active = button.dataset.linkMode;
     document.querySelectorAll("#linkMode button").forEach(other => { const on = other === button; other.classList.toggle("on", on); other.setAttribute("aria-checked", String(on)); });
     document.querySelector(".role-note").textContent = LINK.wantRemote
       ? "兩台電腦各開這個檔案：一台選患者端取得房間代碼，另一台選醫師端輸入代碼。兩台需要連上網路。"
