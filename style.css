@@ -328,8 +328,4 @@ body { background: #e5eef4; color: #1f1f1f; font-family: "42dot Sans", "Noto San
 .game-feedback { position:absolute; z-index:8; left:50%; bottom:56px; min-width:340px; max-width:800px; padding:16px 26px; transform:translateX(-50%); border:1px solid #fff; border-radius:22px; background:#ffffffdc; box-shadow:0 7px 22px #34567824; color:#164267; text-align:center; font-size:22px; font-weight:800; }
 .game-feedback.is-warning { background:#fff4e2ed; color:#9b5b00; }.game-feedback.is-success { background:#e8ffe1ed; color:#287e32; }
 
-@media (max-width: 760px) {
-  #game-screen, #results-screen { overflow: auto; }
-  .game-demo-copy { top: 77%; }.orchard-scene { left: 8%; top: 18%; width: 84%; height: 52%; }.orchard-tree { transform: scale(.65); transform-origin: top left; }.tree-one { left: 8%; }.tree-two { right: 6%; left: auto; }
-  .result-summary { left: 26px; grid-template-columns: repeat(3,minmax(180px,1fr)); gap: 8px; }.result-card { width: auto; padding: 18px 14px; }.result-card strong { font-size: 28px; }.annotation-panel { left: 26px; top: 300px; width: calc(100% - 52px); height: 650px; }.detail-summary { left: 26px; width: calc(100% - 52px); height: 650px; padding: 20px; }.detail-chart { height: 170px; }.brush-toolbar { transform: scale(.85); transform-origin: top left; }
-}
+/* 舞台是固定 1920×1080 再整體縮放；手機橫放由 scaleStage() 處理，不再用 max-width 重排遊戲畫面 */

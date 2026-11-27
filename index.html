@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#d9e5f6">
 <title>REFLECT｜醫病雙視窗模擬</title>
 <style>
@@ -574,8 +574,29 @@ button{cursor:pointer}
 #linkNote.error{color:#c0392b}
 .link-actions{display:flex;justify-content:center;gap:14px;margin-top:20px}
 </style>
+<style id="mobile-landscape">
+/* 手機：橫放時整個舞台縮放填滿；直放時請使用者把手機橫過來 */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html,body{height:100%;height:100dvh;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+body{touch-action:manipulation}
+#stage{left:calc(50% + (var(--safe-l,0px) - var(--safe-r,0px)) / 2);top:calc(50% + (var(--safe-t,0px) - var(--safe-b,0px)) / 2)}
+#safeProbe{position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+#rotateHint{position:fixed;inset:0;z-index:2147483000;display:none;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:32px;text-align:center;color:#fff;background:linear-gradient(160deg,#07156b,#0b2a8a 60%,#1a52c4);font-family:"42dot Sans","Noto Sans TC","Microsoft JhengHei",Arial,sans-serif}
+#rotateHint svg{width:96px;height:96px;animation:rotateTilt 2.4s ease-in-out infinite}
+#rotateHint h2{margin:0;font-size:26px;font-weight:800}
+#rotateHint p{margin:0;max-width:20em;font-size:16px;line-height:1.6;opacity:.85}
+#rotateHint button{height:44px;padding:0 22px;border:2px solid #fff;border-radius:16px;background:transparent;color:#fff;font:700 17px/1 inherit;cursor:pointer}
+@keyframes rotateTilt{0%,25%{transform:rotate(0)}55%,80%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
+@media (orientation:portrait) and (pointer:coarse){#rotateHint{display:flex}}
+#touchFull{position:fixed;right:max(10px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top));z-index:2147482000;width:44px;height:44px;border:2px solid rgba(255,255,255,.9);border-radius:14px;background:rgba(7,21,107,.55);color:#fff;font-size:22px;line-height:1;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+@media (pointer:coarse) and (orientation:landscape){html.can-fullscreen:not(.is-fullscreen) #touchFull{display:flex}}
+@media (prefers-reduced-motion:reduce){#rotateHint svg{animation:none}}
+</style>
 </head>
 <body>
+<div id="safeProbe" aria-hidden="true"></div>
+<div id="rotateHint" role="alert"><svg viewBox="0 0 96 96" aria-hidden="true"><rect x="30" y="8" width="36" height="80" rx="8" fill="none" stroke="#fff" stroke-width="5"/><circle cx="48" cy="78" r="3" fill="#fff"/></svg><h2>請將手機橫放</h2><p>REFLECT 需要橫向畫面才能完整顯示，把手機轉成橫向就會自動排好。</p><button id="rotateFull" type="button" hidden>全螢幕並鎖定橫向</button></div>
+<button id="touchFull" type="button" aria-label="全螢幕">⛶</button>
 <div id="stage" aria-label="REFLECT 醫生評估介面">
   <div id="dualRoleGate" role="dialog" aria-modal="true" aria-label="選擇模擬端別"><div class="role-card"><h1 class="role-title">REFLECT 醫病雙視窗模擬</h1><i class="role-rule"></i><svg class="role-chevron" style="left:105px;top:65px" width="13" height="23" viewBox="0 0 13 23" aria-hidden="true"><path d="M0 0 L13 11.5 L0 23"/></svg><svg class="role-chevron" style="left:609px;top:65px" width="13" height="23" viewBox="0 0 13 23" aria-hidden="true"><path d="M13 0 L0 11.5 L13 23"/></svg><p class="role-note">請在第一個視窗選醫生端，第二個是視窗選患者端。兩個視窗須在同一台電腦、同一瀏覽器開啟這個檔案。</p><button id="chooseDoctor" class="role-btn doctor" type="button" style="left:118px"><i class="base"></i><i class="face"></i><span>開啟醫師端</span></button><button id="choosePatient" class="role-btn patient" type="button" style="left:381px"><i class="base"></i><i class="face"></i><span>開啟患者端</span></button></div><div id="linkMode" data-active="local" role="radiogroup" aria-label="連線方式"><i class="link-thumb" aria-hidden="true"></i><button type="button" role="radio" aria-checked="true" data-link-mode="local" class="on">同一台電腦</button><button type="button" role="radio" aria-checked="false" data-link-mode="remote">兩台電腦（房間代碼）</button></div></div>
   <div id="dualStatus" aria-live="polite">尚未連線</div>
@@ -3688,9 +3709,35 @@ button{cursor:pointer}
     }
   });
   function scaleStage() {
-    const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
-    document.documentElement.style.setProperty("--scale", String(scale));
+    // 手機：用 visualViewport（網址列收合時才準），並避開瀏海／圓角的安全區
+    const root = document.documentElement, vv = window.visualViewport;
+    const probe = getComputedStyle(document.getElementById("safeProbe"));
+    const safe = { t: parseFloat(probe.paddingTop) || 0, r: parseFloat(probe.paddingRight) || 0, b: parseFloat(probe.paddingBottom) || 0, l: parseFloat(probe.paddingLeft) || 0 };
+    const w = (vv && vv.width ? vv.width : window.innerWidth) - safe.l - safe.r;
+    const h = (vv && vv.height ? vv.height : window.innerHeight) - safe.t - safe.b;
+    root.style.setProperty("--safe-t", safe.t + "px"); root.style.setProperty("--safe-r", safe.r + "px");
+    root.style.setProperty("--safe-b", safe.b + "px"); root.style.setProperty("--safe-l", safe.l + "px");
+    root.style.setProperty("--scale", String(Math.max(0.05, Math.min(w / 1920, h / 1080))));
   }
+  // 轉向後瀏覽器回報的尺寸會慢一拍，補算幾次
+  function scaleStageSoon() { scaleStage(); [120, 350, 800].forEach(ms => setTimeout(scaleStage, ms)); }
+  window.addEventListener("orientationchange", scaleStageSoon);
+  window.visualViewport?.addEventListener("resize", scaleStage);
+  // 手機沒有 F 鍵：提供按鈕進全螢幕，Android 可順便鎖定橫向（iPhone 不支援 Fullscreen API，只靠旋轉提示）
+  (() => {
+    const root = document.documentElement, canFull = !!root.requestFullscreen;
+    if (canFull) root.classList.add("can-fullscreen");
+    const sync = () => root.classList.toggle("is-fullscreen", !!document.fullscreenElement);
+    const enter = async () => {
+      try { await root.requestFullscreen(); } catch (_) { return; }
+      try { await screen.orientation?.lock?.("landscape"); } catch (_) {}
+      scaleStageSoon();
+    };
+    document.getElementById("touchFull").addEventListener("click", enter);
+    const rf = document.getElementById("rotateFull");
+    if (canFull && screen.orientation?.lock) { rf.hidden = false; rf.addEventListener("click", enter); }
+    document.addEventListener("fullscreenchange", sync); sync();
+  })();
   // Press F to toggle full screen (Esc also leaves it, handled by the browser). Ignored while typing or with Ctrl/Alt/Cmd held.
   function toggleFullscreen() {
     try {
