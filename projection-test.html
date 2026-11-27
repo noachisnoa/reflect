@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REFLECT 投影現場測試</title>
+<style>
+/* REFLECT 投影現場測試頁：相機（背後）→ 投影畫面的座標對位 + 蓄力摘蘋果手感。
+   不含遊戲本體，用來在現場確認光線、人群、校正是否可行。 */
+:root{--ink:#071568;--blue:#3380eb;--soft:#4f6178;--font:"42dot Sans","Noto Sans TC","Microsoft JhengHei",Arial,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:var(--font);color:var(--ink)}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center;transform:translate(-50%,-50%);overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#f4faff 0%,#dcecfb 70%,#cfe3f7 100%)}
+.t{position:absolute;width:220px;height:220px;margin:-110px 0 0 -110px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#8ee26b,#3caf20 70%,#2a8a14);box-shadow:0 10px 24px #1a5a0c55;display:grid;place-items:center;color:#fff;font-size:64px;font-weight:800;text-shadow:0 2px 6px #0a3a0599;transition:transform .2s,filter .2s}
+.t:before{content:"";position:absolute;left:-30px;top:-30px;width:280px;height:280px;border-radius:50%;background:conic-gradient(var(--blue) calc(var(--p,0)*360deg),rgba(255,255,255,.35) 0);-webkit-mask:radial-gradient(circle,transparent 61%,#000 62%);mask:radial-gradient(circle,transparent 61%,#000 62%);opacity:0;transition:opacity .15s}
+.t.on:before{opacity:1}
+.t.near{transform:scale(1.06)}
+.t.done{animation:pop .55s ease-out}
+.t.lock{filter:grayscale(.7) brightness(1.15);transform:scale(.9)}
+@keyframes pop{0%{transform:scale(1)}35%{transform:scale(1.28);filter:brightness(1.4)}100%{transform:scale(.9)}}
+#hand{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:rgba(51,128,235,.35);border:4px solid #0b2a8a;box-shadow:0 0 0 6px rgba(51,128,235,.25),0 0 30px 8px rgba(51,128,235,.55);pointer-events:none;display:none;z-index:20}
+#hud{position:absolute;left:24px;top:20px;z-index:30;padding:14px 20px;border-radius:16px;background:#ffffffe6;border:1px solid #fff;box-shadow:0 6px 24px #23446626;font-size:20px;line-height:1.6;min-width:430px}
+#hud b{color:var(--blue)}
+#hud .big{font-size:34px;font-weight:800}
+#bar{position:absolute;left:24px;bottom:24px;z-index:30;display:flex;flex-wrap:wrap;gap:10px;max-width:1180px;padding:14px;border-radius:18px;background:#ffffffe6;border:1px solid #fff;box-shadow:0 6px 24px #23446626;align-items:center}
+#bar button,#bar select{height:46px;padding:0 18px;border:2px solid rgba(51,128,235,.85);border-radius:14px;background:linear-gradient(to bottom,rgba(123,189,255,.28),rgba(51,128,235,.4));color:#000068;font:700 19px/1 var(--font);cursor:pointer}
+#bar button.on{background:linear-gradient(to bottom,#7bbdff,#3380eb);color:#fff}
+#bar select{max-width:300px}
+#bar label{font-size:18px;color:var(--soft);display:flex;align-items:center;gap:8px}
+#bar input[type=range]{width:150px}
+#msg{flex-basis:100%;min-height:26px;font-size:19px;color:var(--soft)}
+#msg.err{color:#c0392b}
+#cam{position:absolute;right:24px;bottom:24px;z-index:30;width:640px;border-radius:16px;overflow:hidden;background:#111;border:3px solid #fff;box-shadow:0 8px 30px #23446655;touch-action:none;display:none}
+#cam video{display:block;width:100%;height:auto}
+#cam canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair}
+#cam .tag{position:absolute;left:8px;top:8px;padding:4px 10px;border-radius:999px;background:#000a;color:#fff;font-size:16px}
+#calib{position:absolute;inset:0;z-index:60;background:#000;display:none}
+#calib i{position:absolute;width:200px;height:200px;background:#fff}
+.hide-ui #hud,.hide-ui #bar,.hide-ui #cam{display:none!important}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="targets"></div>
+  <div id="hand"></div>
+  <div id="hud"><div class="big">已摘 <b id="count">0</b> 顆</div><div id="hudInfo"></div></div>
+  <div id="bar">
+    <select id="camSelect" aria-label="選擇鏡頭"></select>
+    <button id="btnCam" type="button">開啟鏡頭</button>
+    <button id="btnCalib" type="button">自動校正</button>
+    <button id="btnQuad" type="button">調整投影範圍</button>
+    <button id="btnRoi" type="button">畫站位區</button>
+    <select id="selHand" aria-label="追蹤哪隻手"><option value="auto">自動（舉得較高的手）</option><option value="left">畫面左邊的手</option><option value="right">畫面右邊的手</option></select>
+    <label>蓄力 <input id="rngHold" type="range" min="0.5" max="3" step="0.1" value="1.5"><b id="holdVal">1.5</b> 秒</label>
+    <button id="btnExp" type="button">鎖定曝光</button>
+    <button id="btnCamPanel" type="button" class="on">鏡頭畫面 (C)</button>
+    <button id="btnReset" type="button">歸零計數</button>
+    <button id="btnFull" type="button">全螢幕 (F)</button>
+    <div id="msg">按「開啟鏡頭」開始。H 鍵隱藏／顯示所有操作介面。</div>
+  </div>
+  <div id="cam"><video id="video" muted playsinline autoplay></video><canvas id="camCanvas"></canvas><span class="tag" id="camTag">鏡頭畫面（不鏡像）</span></div>
+  <div id="calib"></div>
+</div>
+<script>
+"use strict";
+(() => {
+  const W = 1920, H = 1080;
+  const $ = id => document.getElementById(id);
+  const stage = $("stage"), video = $("video"), camCanvas = $("camCanvas"), camBox = $("cam");
+  const msg = (text, error) => { const m = $("msg"); m.textContent = text; m.classList.toggle("error", !!error); m.classList.toggle("err", !!error); };
+
+  // ---------- 設定（存在這台電腦的瀏覽器）----------
+  const SAVE_KEY = "reflect-projection-test";
+  const cfg = { quad: [[.1, .1], [.9, .1], [.9, .9], [.1, .9]], roi: { x: 0, y: 0, w: 1, h: 1 }, hand: "auto", hold: 1.5, deviceId: "", calibrated: false };
+  try { Object.assign(cfg, JSON.parse(localStorage.getItem(SAVE_KEY) || "{}")); } catch (_) {}
+  const save = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(cfg)); } catch (_) {} };
+
+  // ---------- 單應性（相機 → 投影畫面）----------
+  function solveLinear(A, b) {   // 高斯消去，A 為 n×n
+    const n = b.length, M = A.map((row, i) => [...row, b[i]]);
+    for (let c = 0; c < n; c++) {
+      let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+      if (Math.abs(M[p][c]) < 1e-12) return null;
+      [M[c], M[p]] = [M[p], M[c]];
+      for (let r = 0; r < n; r++) if (r !== c) { const f = M[r][c] / M[c][c]; for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k]; }
+    }
+    return M.map((row, i) => row[n] / row[i]);
+  }
+  function solveH(src, dst) {
+    const A = [], b = [];
+    for (let i = 0; i < 4; i++) {
+      const [x, y] = src[i], [u, v] = dst[i];
+      A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+      A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+    }
+    const h = solveLinear(A, b);
+    return h ? [...h, 1] : null;
+  }
+  function applyH(Hm, x, y) { const w = Hm[6] * x + Hm[7] * y + Hm[8]; return [(Hm[0] * x + Hm[1] * y + Hm[2]) / w, (Hm[3] * x + Hm[4] * y + Hm[5]) / w]; }
+  function invertH(m) {
+    const [a, b, c, d, e, f, g, h, i] = m;
+    const A = e * i - f * h, B = -(d * i - f * g), C = d * h - e * g, det = a * A + b * B + c * C;
+    if (Math.abs(det) < 1e-12) return null;
+    return [A / det, -(b * i - c * h) / det, (b * f - c * e) / det, B / det, (a * i - c * g) / det, -(a * f - c * d) / det, C / det, -(a * h - b * g) / det, (a * e - b * d) / det];
+  }
+  const STAGE_CORNERS = [[0, 0], [W, 0], [W, H], [0, H]];
+  let Hc2s = null;
+  const rebuildH = () => { Hc2s = solveH(cfg.quad, STAGE_CORNERS); };
+  rebuildH();
+
+  // ---------- 校正：找四個角落亮塊 ----------
+  const MARK = 200, MARK_INSET = 60;
+  const MARK_CENTERS = [[MARK_INSET + MARK / 2, MARK_INSET + MARK / 2], [W - MARK_INSET - MARK / 2, MARK_INSET + MARK / 2], [W - MARK_INSET - MARK / 2, H - MARK_INSET - MARK / 2], [MARK_INSET + MARK / 2, H - MARK_INSET - MARK / 2]];
+  function findMarkers(diff, w, h) {
+    let max = 0; for (let i = 0; i < diff.length; i++) if (diff[i] > max) max = diff[i];
+    if (max < 25) return { error: "相機幾乎沒有看到畫面變化（投影太暗，或相機沒對到投影）" };
+    const thr = max * 0.5, seen = new Uint8Array(w * h), comps = [], stack = [];
+    for (let s = 0; s < w * h; s++) {
+      if (seen[s] || diff[s] < thr) continue;
+      let area = 0, sx = 0, sy = 0; stack.push(s); seen[s] = 1;
+      while (stack.length) {
+        const p = stack.pop(), x = p % w, y = (p / w) | 0; area++; sx += x; sy += y;
+        for (const q of [p - 1, p + 1, p - w, p + w]) {
+          if (q < 0 || q >= w * h || seen[q] || diff[q] < thr) continue;
+          if ((q === p - 1 && x === 0) || (q === p + 1 && x === w - 1)) continue;
+          seen[q] = 1; stack.push(q);
+        }
+      }
+      comps.push({ area, x: sx / area, y: sy / area });
+    }
+    comps.sort((a, b) => b.area - a.area);
+    const four = comps.slice(0, 4);
+    if (four.length < 4 || four[3].area < 6) return { error: "只找到 " + four.filter(c => c.area >= 6).length + " 個角落亮塊（需要 4 個）" };
+    const by = f => [...four].sort((a, b) => f(a) - f(b));
+    const tl = by(c => c.x + c.y)[0], br = by(c => c.x + c.y)[3], tr = by(c => c.x - c.y)[3], bl = by(c => c.x - c.y)[0];
+    if (new Set([tl, tr, br, bl]).size < 4) return { error: "四個亮塊的位置無法分辨角落" };
+    return { points: [tl, tr, br, bl].map(c => [c.x / w, c.y / h]) };
+  }
+  function quadFromMarkers(points) {   // points：相機 0..1；回傳投影畫面四角在相機裡的位置
+    const Hm = solveH(points, MARK_CENTERS), inv = Hm && invertH(Hm);
+    if (!inv) return null;
+    return STAGE_CORNERS.map(([x, y]) => applyH(inv, x, y));
+  }
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  function grabGray(width) {
+    const w = width, h = Math.round(width * video.videoHeight / video.videoWidth), c = grabGray.c || (grabGray.c = document.createElement("canvas"));
+    c.width = w; c.height = h; const g = c.getContext("2d", { willReadFrequently: true }); g.drawImage(video, 0, 0, w, h);
+    const d = g.getImageData(0, 0, w, h).data, out = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) out[i] = d[i * 4] * .299 + d[i * 4 + 1] * .587 + d[i * 4 + 2] * .114;
+    return { data: out, w, h };
+  }
+  async function averageGray(frames) {
+    let acc = null, size = null;
+    for (let i = 0; i < frames; i++) {
+      const f = grabGray(480); size = f; if (!acc) acc = new Float32Array(f.data.length);
+      for (let k = 0; k < acc.length; k++) acc[k] += f.data[k] / frames;
+      await wait(90);
+    }
+    return { data: acc, w: size.w, h: size.h };
+  }
+  let calibrating = false;
+  async function autoCalibrate() {
+    if (calibrating) return;
+    if (!video.videoWidth) { msg("請先開啟鏡頭。", true); return; }
+    calibrating = true; document.body.classList.remove("hide-ui");
+    const overlay = $("calib"); overlay.replaceChildren();
+    overlay.style.display = "block";
+    const ui = [$("hud"), $("bar"), camBox]; ui.forEach(e => e.style.visibility = "hidden");
+    try {
+      await wait(1300);
+      const dark = await averageGray(4);
+      MARK_CENTERS.forEach(([x, y]) => { const i = document.createElement("i"); i.style.left = x - MARK / 2 + "px"; i.style.top = y - MARK / 2 + "px"; overlay.append(i); });
+      await wait(1300);
+      const lit = await averageGray(4);
+      overlay.style.display = "none"; ui.forEach(e => e.style.visibility = "");
+      const diff = new Float32Array(dark.data.length);
+      for (let i = 0; i < diff.length; i++) diff[i] = Math.max(0, lit.data[i] - dark.data[i]);
+      const found = findMarkers(diff, dark.w, dark.h);
+      if (found.error) { msg("自動校正失敗：" + found.error + "。可以改用「調整投影範圍」手動拖曳四個角。", true); return; }
+      const quad = quadFromMarkers(found.points);
+      if (!quad) { msg("自動校正失敗：算不出轉換。請改用手動調整。", true); return; }
+      cfg.quad = quad; cfg.calibrated = true; rebuildH(); save();
+      msg("自動校正完成。請站進去舉手，看藍色圓點是不是跟著你的手。");
+    } finally { overlay.style.display = "none"; ui.forEach(e => e.style.visibility = ""); calibrating = false; }
+  }
+
+  // ---------- 鏡頭 ----------
+  async function listCameras() {
+    try {
+      const list = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === "videoinput");
+      const sel = $("camSelect"); sel.replaceChildren();
+      list.forEach((d, i) => { const o = document.createElement("option"); o.value = d.deviceId; o.textContent = d.label || ("鏡頭 " + (i + 1)); sel.append(o); });
+      if (cfg.deviceId && list.some(d => d.deviceId === cfg.deviceId)) sel.value = cfg.deviceId;
+    } catch (_) {}
+  }
+  let stream = null;
+  async function attachStream(s) {
+    stream?.getTracks().forEach(t => t.stop());
+    stream = s; video.srcObject = s; await video.play().catch(() => {});
+    camBox.style.display = "block"; $("btnCamPanel").classList.add("on");
+    await new Promise(r => video.videoWidth ? r() : video.addEventListener("loadedmetadata", r, { once: true }));
+    camCanvas.width = 640; camCanvas.height = Math.round(640 * video.videoHeight / video.videoWidth);
+  }
+  async function startCamera() {
+    try {
+      const id = $("camSelect").value;
+      const s = await navigator.mediaDevices.getUserMedia({ video: Object.assign({ width: { ideal: 1280 }, height: { ideal: 720 } }, id ? { deviceId: { exact: id } } : {}), audio: false });
+      await attachStream(s);
+      cfg.deviceId = s.getVideoTracks()[0].getSettings().deviceId || ""; save();
+      await listCameras();
+      msg("鏡頭已開啟（" + video.videoWidth + "×" + video.videoHeight + "）。" + (cfg.calibrated ? "沿用上次的校正。" : "請先按「自動校正」。"));
+      loadModel();
+    } catch (error) { msg("無法開啟鏡頭：" + (error.message || error.name), true); }
+  }
+  async function lockExposure() {
+    const track = stream?.getVideoTracks()[0];
+    if (!track) { msg("請先開啟鏡頭。", true); return; }
+    try {
+      const caps = track.getCapabilities?.() || {};
+      if (!caps.exposureMode || !caps.exposureMode.includes("manual")) { msg("這支鏡頭不開放網頁調整曝光，請改用鏡頭廠商軟體或把現場光線固定。", true); return; }
+      const advanced = { exposureMode: "manual" }; const st = track.getSettings();
+      if (caps.exposureTime && st.exposureTime) advanced.exposureTime = st.exposureTime;
+      await track.applyConstraints({ advanced: [advanced] });
+      msg("已鎖定曝光。");
+    } catch (error) { msg("鎖定曝光失敗：" + (error.message || error.name), true); }
+  }
+
+  // ---------- 姿勢偵測（與遊戲同一個模型）----------
+  let landmarker = null, modelLoading = false;
+  async function loadModel() {
+    if (landmarker || modelLoading) return;
+    modelLoading = true; msg("載入姿勢模型中…（第一次需要網路）");
+    try {
+      const { FilesetResolver, PoseLandmarker } = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.1.1/vision_bundle.mjs");
+      const files = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.1.1/wasm");
+      const options = { baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task", delegate: "GPU" }, runningMode: "VIDEO", numPoses: 4 };
+      try { landmarker = await PoseLandmarker.createFromOptions(files, options); }
+      catch (_) { options.baseOptions.delegate = "CPU"; landmarker = await PoseLandmarker.createFromOptions(files, options); }
+      msg("姿勢模型已就緒。" + (cfg.calibrated ? "" : "請先按「自動校正」。"));
+    } catch (error) { msg("姿勢模型載入失敗：" + (error.message || error) + "（需要網路）", true); }
+    modelLoading = false;
+  }
+
+  const S = { poses: [], people: 0, tracked: null, trackedCenter: null, hand: null, handStage: null, lastHandAt: 0, fps: 0, frames: 0, fpsAt: performance.now(), handCam: null };
+  const inRoi = (x, y) => x >= cfg.roi.x && x <= cfg.roi.x + cfg.roi.w && y >= cfg.roi.y && y <= cfg.roi.y + cfg.roi.h;
+  const vis = p => p ? (p.visibility ?? 1) : 0;
+  function bodyCenter(lm) {
+    const pts = [lm[11], lm[12]].filter(p => p && vis(p) > .2);
+    const use = pts.length ? pts : [lm[23], lm[24]].filter(p => p && vis(p) > .2);
+    if (!use.length) return null;
+    return { x: use.reduce((s, p) => s + p.x, 0) / use.length, y: use.reduce((s, p) => s + p.y, 0) / use.length };
+  }
+  function handsOf(lm) {   // 每隻手取食指指尖（看不到就用手腕）
+    return [[20, 16], [19, 15]].map(([tip, wrist]) => {
+      const p = vis(lm[tip]) > .2 ? lm[tip] : (vis(lm[wrist]) > .2 ? lm[wrist] : null);
+      return p ? { x: p.x, y: p.y } : null;
+    }).filter(Boolean);
+  }
+  function handlePoses(poses) {
+    S.poses = poses; S.people = poses.length;
+    // 站位區內、離上一個人最近（沒有上一個就離站位區中心最近）的那一位
+    const roiC = { x: cfg.roi.x + cfg.roi.w / 2, y: cfg.roi.y + cfg.roi.h / 2 };
+    let best = null, bestD = Infinity;
+    for (const lm of poses) {
+      const c = bodyCenter(lm); if (!c || !inRoi(c.x, c.y)) continue;
+      const ref = S.trackedCenter && Math.hypot(c.x - S.trackedCenter.x, c.y - S.trackedCenter.y) < .25 ? S.trackedCenter : roiC;
+      const d = Math.hypot(c.x - ref.x, c.y - ref.y);
+      if (d < bestD) { bestD = d; best = { lm, c }; }
+    }
+    S.tracked = best ? best.lm : null; S.trackedCenter = best ? best.c : null;
+    let hand = null;
+    if (best) {
+      const hs = handsOf(best.lm);
+      if (hs.length) hand = cfg.hand === "left" ? hs.reduce((a, b) => b.x < a.x ? b : a) : cfg.hand === "right" ? hs.reduce((a, b) => b.x > a.x ? b : a) : hs.reduce((a, b) => b.y < a.y ? b : a);
+    }
+    S.hand = hand;
+    if (hand && Hc2s) {
+      const [sx, sy] = applyH(Hc2s, hand.x, hand.y);
+      S.handStage = S.handStage && performance.now() - S.lastHandAt < 400 ? { x: S.handStage.x + (sx - S.handStage.x) * .55, y: S.handStage.y + (sy - S.handStage.y) * .55 } : { x: sx, y: sy };
+      S.lastHandAt = performance.now();
+    }
+  }
+
+  // ---------- 蘋果與蓄力 ----------
+  const TARGETS = [];
+  [270, 540, 810].forEach((y, r) => [480, 960, 1440].forEach((x, c) => {
+    const el = document.createElement("div"); el.className = "t"; el.textContent = r * 3 + c + 1; el.style.left = x + "px"; el.style.top = y + "px";
+    $("targets").append(el); TARGETS.push({ el, x, y, p: 0, lockUntil: 0 });
+  }));
+  let picked = 0;
+  function updateHold(dt, now) {
+    const hand = S.handStage && now - S.lastHandAt < 400 ? S.handStage : null;
+    let active = null;
+    if (hand) { let bd = Infinity; for (const t of TARGETS) { const d = Math.hypot(hand.x - t.x, hand.y - t.y); if (d < 120 && d < bd && now >= t.lockUntil) { bd = d; active = t; } } }
+    for (const t of TARGETS) {
+      if (t === active) {
+        t.p = Math.min(1, t.p + dt / cfg.hold);
+        if (t.p >= 1) { t.p = 0; t.lockUntil = now + 900; picked++; $("count").textContent = picked; t.el.classList.remove("done"); void t.el.offsetWidth; t.el.classList.add("done"); }
+      } else t.p = Math.max(0, t.p - dt * 3);
+      const locked = now < t.lockUntil;
+      t.el.style.setProperty("--p", t.p.toFixed(3));
+      t.el.classList.toggle("on", t.p > 0.01); t.el.classList.toggle("near", t === active); t.el.classList.toggle("lock", locked);
+      if (!locked && t.el.classList.contains("done") && !locked) t.el.classList.remove("done");
+    }
+  }
+
+  // ---------- 畫面 ----------
+  const handEl = $("hand");
+  let editMode = "";     // "quad" | "roi" | ""
+  function drawCam() {
+    if (camBox.style.display === "none" || !camCanvas.width) return;
+    const g = camCanvas.getContext("2d"), w = camCanvas.width, h = camCanvas.height;
+    g.clearRect(0, 0, w, h);
+    const P = (x, y) => [x * w, y * h];
+    // 投影範圍
+    g.lineWidth = 3; g.strokeStyle = cfg.calibrated ? "#52c97b" : "#f0b84a"; g.setLineDash([]);
+    g.beginPath(); cfg.quad.forEach(([x, y], i) => { const [px, py] = P(x, y); i ? g.lineTo(px, py) : g.moveTo(px, py); }); g.closePath(); g.stroke();
+    // 3x3 蘋果位置投影回相機（確認校正）
+    const inv = Hc2s && invertH(Hc2s);
+    if (inv) { g.fillStyle = "#52c97b99"; for (const t of TARGETS) { const [cx, cy] = applyH(inv, t.x, t.y), [px, py] = P(cx, cy); g.beginPath(); g.arc(px, py, 6, 0, 7); g.fill(); } }
+    // 站位區
+    g.setLineDash([10, 8]); g.strokeStyle = "#f0b84a"; g.strokeRect(cfg.roi.x * w, cfg.roi.y * h, cfg.roi.w * w, cfg.roi.h * h); g.setLineDash([]);
+    // 骨架
+    for (const lm of S.poses) {
+      const mine = lm === S.tracked; g.strokeStyle = mine ? "#3380eb" : "#9aa7b4"; g.fillStyle = g.strokeStyle; g.lineWidth = mine ? 4 : 2;
+      for (const [a, b] of [[11, 12], [11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24]]) {
+        if (vis(lm[a]) < .2 || vis(lm[b]) < .2) continue; const [x1, y1] = P(lm[a].x, lm[a].y), [x2, y2] = P(lm[b].x, lm[b].y);
+        g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+      }
+    }
+    if (S.hand) { const [px, py] = P(S.hand.x, S.hand.y); g.strokeStyle = "#fff"; g.lineWidth = 5; g.beginPath(); g.arc(px, py, 14, 0, 7); g.stroke(); g.strokeStyle = "#0b2a8a"; g.lineWidth = 3; g.beginPath(); g.arc(px, py, 14, 0, 7); g.stroke(); }
+    if (editMode === "quad") cfg.quad.forEach(([x, y], i) => { const [px, py] = P(x, y); g.fillStyle = "#fff"; g.strokeStyle = "#0b2a8a"; g.lineWidth = 3; g.beginPath(); g.arc(px, py, 13, 0, 7); g.fill(); g.stroke(); g.fillStyle = "#0b2a8a"; g.font = "bold 14px sans-serif"; g.fillText(["左上", "右上", "右下", "左下"][i], px + 16, py - 10); });
+  }
+  let last = performance.now();
+  function loop(now) {
+    requestAnimationFrame(loop);
+    const dt = Math.min(.1, (now - last) / 1000); last = now;
+    if (landmarker && !calibrating && video.readyState >= 2 && video.videoWidth) {
+      try { const res = landmarker.detectForVideo(video, now); handlePoses(res.landmarks || []); S.frames++; } catch (_) {}
+    }
+    if (now - S.fpsAt > 1000) { S.fps = S.frames * 1000 / (now - S.fpsAt); S.frames = 0; S.fpsAt = now; }
+    updateHold(dt, now);
+    const showHand = S.handStage && now - S.lastHandAt < 400 && !calibrating;
+    handEl.style.display = showHand ? "block" : "none";
+    if (showHand) { handEl.style.left = S.handStage.x + "px"; handEl.style.top = S.handStage.y + "px"; }
+    $("hudInfo").innerHTML = "鏡頭：<b>" + (video.videoWidth ? video.videoWidth + "×" + video.videoHeight : "未開啟") + "</b>　偵測 <b>" + S.fps.toFixed(0) + "</b> fps<br>" +
+      "畫面中人數：<b>" + S.people + "</b>　鎖定玩家：<b>" + (S.tracked ? "是" : "否") + "</b><br>" +
+      "校正：<b>" + (cfg.calibrated ? "已完成" : "尚未校正") + "</b>　追蹤：<b>" + ({ auto: "較高的手", left: "畫面左邊", right: "畫面右邊" })[cfg.hand] + "</b><br>" +
+      "手的位置：<b>" + (showHand ? Math.round(S.handStage.x) + ", " + Math.round(S.handStage.y) : "—") + "</b>";
+    drawCam();
+  }
+
+  // ---------- 相機面板操作（拖四角／畫站位區）----------
+  function camPoint(event) { const r = camCanvas.getBoundingClientRect(); return [Math.min(1, Math.max(0, (event.clientX - r.left) / r.width)), Math.min(1, Math.max(0, (event.clientY - r.top) / r.height))]; }
+  let drag = null;
+  camCanvas.addEventListener("pointerdown", event => {
+    if (!editMode) return; const [x, y] = camPoint(event); camCanvas.setPointerCapture(event.pointerId);
+    if (editMode === "quad") {
+      let bi = -1, bd = .05; cfg.quad.forEach(([qx, qy], i) => { const d = Math.hypot((qx - x) * camCanvas.width, (qy - y) * camCanvas.height) / camCanvas.width; if (d < bd) { bd = d; bi = i; } });
+      if (bi >= 0) drag = { kind: "quad", i: bi };
+    } else { drag = { kind: "roi", x0: x, y0: y }; }
+  });
+  camCanvas.addEventListener("pointermove", event => {
+    if (!drag) return; const [x, y] = camPoint(event);
+    if (drag.kind === "quad") { cfg.quad[drag.i] = [x, y]; cfg.calibrated = true; rebuildH(); }
+    else { cfg.roi = { x: Math.min(drag.x0, x), y: Math.min(drag.y0, y), w: Math.abs(x - drag.x0), h: Math.abs(y - drag.y0) }; }
+  });
+  const endDrag = () => { if (!drag) return; if (drag.kind === "roi" && (cfg.roi.w < .05 || cfg.roi.h < .05)) cfg.roi = { x: 0, y: 0, w: 1, h: 1 }; drag = null; save(); };
+  camCanvas.addEventListener("pointerup", endDrag); camCanvas.addEventListener("pointercancel", endDrag);
+  camCanvas.addEventListener("dblclick", () => { if (editMode === "roi") { cfg.roi = { x: 0, y: 0, w: 1, h: 1 }; save(); } });
+  function setEdit(mode) {
+    editMode = editMode === mode ? "" : mode;
+    $("btnQuad").classList.toggle("on", editMode === "quad"); $("btnRoi").classList.toggle("on", editMode === "roi");
+    $("camTag").textContent = editMode === "quad" ? "拖曳四個白點對準投影畫面的四個角" : editMode === "roi" ? "拖曳框出玩家站的區域（雙擊還原）" : "鏡頭畫面（不鏡像）";
+    if (editMode && camBox.style.display === "none") camBox.style.display = "block";
+    camCanvas.style.cursor = editMode ? "crosshair" : "default";
+  }
+
+  // ---------- 按鈕與鍵盤 ----------
+  const fit = () => { stage.style.transform = "translate(-50%,-50%) scale(" + Math.min(innerWidth / W, innerHeight / H) + ")"; };
+  addEventListener("resize", fit); fit();
+  const toggleFull = () => { if (document.fullscreenElement) document.exitFullscreen?.(); else document.documentElement.requestFullscreen?.(); };
+  $("btnCam").addEventListener("click", startCamera);
+  $("btnCalib").addEventListener("click", autoCalibrate);
+  $("btnQuad").addEventListener("click", () => setEdit("quad"));
+  $("btnRoi").addEventListener("click", () => setEdit("roi"));
+  $("btnExp").addEventListener("click", lockExposure);
+  $("btnFull").addEventListener("click", toggleFull);
+  $("btnReset").addEventListener("click", () => { picked = 0; $("count").textContent = 0; });
+  $("btnCamPanel").addEventListener("click", () => { const open = camBox.style.display === "none"; camBox.style.display = open ? "block" : "none"; $("btnCamPanel").classList.toggle("on", open); });
+  $("camSelect").addEventListener("change", () => { cfg.deviceId = $("camSelect").value; save(); if (stream) startCamera(); });
+  $("selHand").value = cfg.hand; $("selHand").addEventListener("change", () => { cfg.hand = $("selHand").value; save(); });
+  $("rngHold").value = cfg.hold; $("holdVal").textContent = cfg.hold; $("rngHold").addEventListener("input", () => { cfg.hold = Number($("rngHold").value); $("holdVal").textContent = cfg.hold; save(); });
+  addEventListener("keydown", event => {
+    if (event.target.matches?.("select,input")) return;
+    const k = event.key.toLowerCase();
+    if (k === "f") toggleFull(); else if (k === "h") document.body.classList.toggle("hide-ui"); else if (k === "c") $("btnCamPanel").click();
+  });
+  listCameras();
+  requestAnimationFrame(loop);
+
+  // 除錯／測試用
+  window.REFLECT_PROJ = { cfg, S, solveH, applyH, invertH, findMarkers, quadFromMarkers, handlePoses, attachStream, autoCalibrate, rebuildH, picked: () => picked, MARK_CENTERS };
+})();
+</script>
+</body>
+</html>
